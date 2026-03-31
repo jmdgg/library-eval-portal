@@ -186,8 +186,27 @@ if (isset($_FILES['csv_file']) && $_FILES['csv_file']['error'] == 0) {
 
     // --- B. INJECT SUMMARY SHEET ---
     $summarySheet = $spreadsheet->getSheetByName('SUMMARY');
+    // --- NEW: Initialize array for Frontend JSON ---
+        $frontendJSON = [];
+        $dateParts = explode(' ', $reportDate); 
+        $monthMap = ['JANUARY'=>'01', 'FEBRUARY'=>'02', 'MARCH'=>'03', 'APRIL'=>'04', 'MAY'=>'05', 'JUNE'=>'06', 'JULY'=>'07', 'AUGUST'=>'08', 'SEPTEMBER'=>'09', 'OCTOBER'=>'10', 'NOVEMBER'=>'11', 'DECEMBER'=>'12'];
+        $jsonYear = isset($dateParts[1]) ? $dateParts[1] : date('Y');
+        $jsonMonth = isset($dateParts[0]) && isset($monthMap[$dateParts[0]]) ? $monthMap[$dateParts[0]] : date('m');
+        
+        // Map PHP department names to the shortcodes your JS expects
+        $jsBranchMap = [
+            'Circulation Section' => 'CIRC',
+            'General Reference Section' => 'GEN REF',
+            'Computer and Multimedia Services (CMS)' => 'CMS',
+            'Health Sciences Library' => 'HSL',
+            'Filipiniana Section' => 'FILNA',
+            'College of Business and Accountancy Library' => 'CBA',
+            'PS Library' => 'PS'
+        ];
     if ($summarySheet) {
         $summarySheet->setCellValue('D10', $reportDate);
+
+        
         
         // --- NEW: Master aggregators for the Overall Rating rows ---
         $grandTotal = 0;
@@ -233,7 +252,20 @@ if (isset($_FILES['csv_file']) && $_FILES['csv_file']['error'] == 0) {
                 $sumP1_Mean += ($rowMean * $total);
                 $sumP2_Sat += ($satMean * $total);
                 $sumP3_Over += ($p3Mean * $total);
-
+                // --- NEW: Push Department Data to Frontend JSON ---
+                $jsBranch = isset($jsBranchMap[$dept]) ? $jsBranchMap[$dept] : $dept;
+                $frontendJSON[] = [
+                    'branch' => $jsBranch,
+                    'Year' => $jsonYear,
+                    'Month' => $jsonMonth,
+                    'respondents' => $total,
+                    'partIMean1' => round($m1, 2),
+                    'partIMean2' => round($m2, 2),
+                    'partIMean3' => round($m3, 2),
+                    'partIMean4' => round($m4, 2),
+                    'partIISatisfaction' => round($satMean, 2),
+                    'partIIIOverallRating' => round($p3Mean, 2)
+                ];
             } else {
                 $summarySheet->setCellValue('C'.$p1Row, '-');
                 $summarySheet->setCellValue('C'.$p2Row, '-');
@@ -256,6 +288,19 @@ if (isset($_FILES['csv_file']) && $_FILES['csv_file']['error'] == 0) {
 
             // Part III Overall (Row 47)
             $summarySheet->setCellValue('C47', round($sumP3_Over / $grandTotal, 2));
+            // --- NEW: Add Master Overall Row to Frontend JSON ---
+            $frontendJSON[] = [
+                'branch' => 'OVERALL RATING',
+                'Year' => $jsonYear,
+                'Month' => $jsonMonth,
+                'respondents' => $grandTotal,
+                'partIMean1' => round($sumP1_Q1 / $grandTotal, 2),
+                'partIMean2' => round($sumP1_Q2 / $grandTotal, 2),
+                'partIMean3' => round($sumP1_Q3 / $grandTotal, 2),
+                'partIMean4' => round($sumP1_Q4 / $grandTotal, 2),
+                'partIISatisfaction' => round($sumP2_Sat / $grandTotal, 2),
+                'partIIIOverallRating' => round($sumP3_Over / $grandTotal, 2)
+            ];
         }
     }
 
@@ -280,15 +325,31 @@ if (isset($_FILES['csv_file']) && $_FILES['csv_file']['error'] == 0) {
         }
     }
 
-    // 4. EXPORT
+   // 4. SAVE FILE AND EXPORT JSON FOR FRONTEND
     $fileName = 'EVAL_REPORT_' . str_replace(' ', '_', $reportDate) . '.xlsx';
-    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    header('Content-Disposition: attachment;filename="'. $fileName .'"');
-    header('Cache-Control: max-age=0');
+    $saveDir = __DIR__ . '/exports/';
+    
+    // Safety check: Create the directory if it doesn't exist
+    if (!is_dir($saveDir)) {
+        mkdir($saveDir, 0755, true);
+    }
+    
+    $savePath = $saveDir . $fileName;
+    $downloadUrl = 'exports/' . $fileName;
 
+    // Save the Excel file to the server instead of forcing a download
     $writer = new Xlsx($spreadsheet);
-    $writer->save('php://output');
-    exit; 
+    $writer->save($savePath);
+
+    // Send the JSON payload back to the browser
+    header('Content-Type: application/json');
+    echo json_encode([
+        'status' => 'success', 
+        'reportDate' => $reportDate,
+        'downloadUrl' => $downloadUrl,
+        'data' => $frontendJSON 
+    ]);
+    exit;
 
 } else {
     echo "Error processing file.";
