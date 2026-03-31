@@ -6,7 +6,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 if (isset($_FILES['csv_file']) && $_FILES['csv_file']['error'] == 0) {
     $fileTmpPath = $_FILES['csv_file']['tmp_name'];
-    
+
     // 1. THE DATA STRUCTURE (Row Mapping & Math Buckets)
     // We map each department to its specific rows for Part 1, Part 2, and Part 3
     $departments = [
@@ -24,8 +24,12 @@ if (isset($_FILES['csv_file']) && $_FILES['csv_file']['error'] == 0) {
     foreach ($departments as $dept => $rows) {
         $stats[$dept] = [
             'count' => 0,
-            'q1_sum' => 0, 'q2_sum' => 0, 'q3_sum' => 0, 'q4_sum' => 0,
-            'sat_sum' => 0, 'overall_sum' => 0
+            'q1_sum' => 0,
+            'q2_sum' => 0,
+            'q3_sum' => 0,
+            'q4_sum' => 0,
+            'sat_sum' => 0,
+            'overall_sum' => 0
         ];
     }
 
@@ -40,41 +44,58 @@ if (isset($_FILES['csv_file']) && $_FILES['csv_file']['error'] == 0) {
     if (($handle = fopen($fileTmpPath, "r")) !== FALSE) {
         $rowCounter = 0;
         while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
-            if ($rowCounter == 0) { $rowCounter++; continue; }
-            
+            if ($rowCounter == 0) {
+                $rowCounter++;
+                continue;
+            }
+
             // Extract Date from the first valid row to inject into D10
             if ($rowCounter == 1 && !empty($data[2])) {
                 $reportDate = strtoupper(date('F Y', strtotime(trim($data[2]))));
             }
 
-            $librarySection = trim($data[7]); 
-            $service = trim($data[8]); 
-            
+            $librarySection = trim($data[7]);
+            $service = trim($data[8]);
+
             // Extract the 4 specific questions, plus satisfaction and overall
-            $q1 = trim($data[9]); 
-            $q2 = trim($data[10]); 
-            $q3 = trim($data[11]); 
-            $q4 = trim($data[12]); 
-            $sat = trim($data[13]); 
-            $overall = trim($data[14]); 
+            $q1 = trim($data[9]);
+            $q2 = trim($data[10]);
+            $q3 = trim($data[11]);
+            $q4 = trim($data[12]);
+            $sat = trim($data[13]);
+            $overall = trim($data[14]);
 
             // Translators
             $dict = ['Professional School Library' => 'PS Library', 'CBA Library' => 'College of Business and Accountancy Library', 'CMS Library' => 'Computer and Multimedia Services (CMS)'];
-            if (array_key_exists($librarySection, $dict)) { $librarySection = $dict[$librarySection]; }
-            if (stripos($service, 'Similarity') !== false) { $librarySection = 'General Reference Section'; }
+            if (array_key_exists($librarySection, $dict)) {
+                $librarySection = $dict[$librarySection];
+            }
+            if (stripos($service, 'Similarity') !== false) {
+                $librarySection = 'General Reference Section';
+            }
 
             // Apply Math
             if (array_key_exists($librarySection, $stats)) {
                 $stats[$librarySection]['count']++;
-                
-                if (isset($likert[$q1])) $stats[$librarySection]['q1_sum'] += $likert[$q1];
-                if (isset($likert[$q2])) $stats[$librarySection]['q2_sum'] += $likert[$q2];
-                if (isset($likert[$q3])) $stats[$librarySection]['q3_sum'] += $likert[$q3];
-                if (isset($likert[$q4])) $stats[$librarySection]['q4_sum'] += $likert[$q4];
-                
+
+                if (isset($likert[$q1]))
+                    $stats[$librarySection]['q1_sum'] += $likert[$q1];
+                if (isset($likert[$q2]))
+                    $stats[$librarySection]['q2_sum'] += $likert[$q2];
+                if (isset($likert[$q3]))
+                    $stats[$librarySection]['q3_sum'] += $likert[$q3];
+                if (isset($likert[$q4]))
+                    $stats[$librarySection]['q4_sum'] += $likert[$q4];
+
                 // Case-insensitive checks for Part 2 and 3
-                foreach($satScore as $key => $val) { if(strcasecmp($sat, $key) == 0) $stats[$librarySection]['sat_sum'] += $val; }
-                foreach($overallScore as $key => $val) { if(strcasecmp($overall, $key) == 0) $stats[$librarySection]['overall_sum'] += $val; }
+                foreach ($satScore as $key => $val) {
+                    if (strcasecmp($sat, $key) == 0)
+                        $stats[$librarySection]['sat_sum'] += $val;
+                }
+                foreach ($overallScore as $key => $val) {
+                    if (strcasecmp($overall, $key) == 0)
+                        $stats[$librarySection]['overall_sum'] += $val;
+                }
             }
             $rowCounter++;
         }
@@ -96,8 +117,12 @@ if (isset($_FILES['csv_file']) && $_FILES['csv_file']['error'] == 0) {
 
     // Variables to track Grand Totals for Row 22, 34, 47
     $grandCount = 0;
-    $grandQ1 = 0; $grandQ2 = 0; $grandQ3 = 0; $grandQ4 = 0;
-    $grandSat = 0; $grandOverall = 0;
+    $grandQ1 = 0;
+    $grandQ2 = 0;
+    $grandQ3 = 0;
+    $grandQ4 = 0;
+    $grandSat = 0;
+    $grandOverall = 0;
 
     // Inject data for each department
     foreach ($departments as $dept => $rows) {
@@ -113,21 +138,21 @@ if (isset($_FILES['csv_file']) && $_FILES['csv_file']['error'] == 0) {
             $avgQ3 = $stats[$dept]['q3_sum'] / $count;
             $avgQ4 = $stats[$dept]['q4_sum'] / $count;
             $rowMean = ($avgQ1 + $avgQ2 + $avgQ3 + $avgQ4) / 4;
-            
+
             $avgSat = $stats[$dept]['sat_sum'] / $count;
             $avgOver = $stats[$dept]['overall_sum'] / $count;
 
             // Inject Part 1
-            $sheet->setCellValue('C'.$p1, $count);
-            $sheet->setCellValue('D'.$p1, round($avgQ1, 2));
-            $sheet->setCellValue('E'.$p1, round($avgQ2, 2));
-            $sheet->setCellValue('F'.$p1, round($avgQ3, 2));
-            $sheet->setCellValue('G'.$p1, round($avgQ4, 2));
-            $sheet->setCellValue('H'.$p1, round($rowMean, 2));
+            $sheet->setCellValue('C' . $p1, $count);
+            $sheet->setCellValue('D' . $p1, round($avgQ1, 2));
+            $sheet->setCellValue('E' . $p1, round($avgQ2, 2));
+            $sheet->setCellValue('F' . $p1, round($avgQ3, 2));
+            $sheet->setCellValue('G' . $p1, round($avgQ4, 2));
+            $sheet->setCellValue('H' . $p1, round($rowMean, 2));
 
             // Inject Part 2 & 3
-            $sheet->setCellValue('C'.$p2, round($avgSat, 2));
-            $sheet->setCellValue('C'.$p3, round($avgOver, 2));
+            $sheet->setCellValue('C' . $p2, round($avgSat, 2));
+            $sheet->setCellValue('C' . $p3, round($avgOver, 2));
 
             // Add to Grand Totals
             $grandCount += $count;
@@ -140,9 +165,9 @@ if (isset($_FILES['csv_file']) && $_FILES['csv_file']['error'] == 0) {
 
         } else {
             // If nobody used this library, put a dash "-" like the client does
-            $sheet->setCellValue('C'.$p1, '-');
-            $sheet->setCellValue('C'.$p2, '-');
-            $sheet->setCellValue('C'.$p3, '-');
+            $sheet->setCellValue('C' . $p1, '-');
+            $sheet->setCellValue('C' . $p2, '-');
+            $sheet->setCellValue('C' . $p3, '-');
         }
     }
 
@@ -170,17 +195,108 @@ if (isset($_FILES['csv_file']) && $_FILES['csv_file']['error'] == 0) {
     // Inject blank space for Analysis paragraph (Cell B58)
     $sheet->setCellValue('B58', '[Please type your manual analysis here]');
 
-    // 5. EXPORT AND DOWNLOAD
+    // 4.5. APP DATA FOR PREVIEW DASHBOARD
+    
+    // Extract Year and Month from reportDate (e.g. "DECEMBER 2022")
+    $p = explode(' ', $reportDate);
+    $rMonthName = count($p) > 0 ? $p[0] : '';
+    $rYear = count($p) > 1 ? $p[1] : '';
+    
+    $mMap = ['JANUARY'=>'01', 'FEBRUARY'=>'02', 'MARCH'=>'03', 'APRIL'=>'04', 'MAY'=>'05', 'JUNE'=>'06', 'JULY'=>'07', 'AUGUST'=>'08', 'SEPTEMBER'=>'09', 'OCTOBER'=>'10', 'NOVEMBER'=>'11', 'DECEMBER'=>'12'];
+    $rMonth = isset($mMap[$rMonthName]) ? $mMap[$rMonthName] : '';
+    
+    $analyzedData = [];
+    $deptMap = [
+        'Circulation Section' => 'CIRC',
+        'General Reference Section' => 'GEN REF',
+        'Computer and Multimedia Services (CMS)' => 'CMS',
+        'Health Sciences Library' => 'HSL',
+        'Filipiniana Section' => 'FILNA',
+        'College of Business and Accountancy Library' => 'CBA',
+        'PS Library' => 'PS'
+    ];
+    foreach ($departments as $dept => $rows) {
+        $count = $stats[$dept]['count'];
+        if ($count > 0) {
+            $analyzedData[] = [
+                'Year' => $rYear,
+                'Month' => $rMonth,
+                'branch' => $deptMap[$dept],
+                'respondents' => $count,
+                'partIMean1' => round($stats[$dept]['q1_sum'] / $count, 2),
+                'partIMean2' => round($stats[$dept]['q2_sum'] / $count, 2),
+                'partIMean3' => round($stats[$dept]['q3_sum'] / $count, 2),
+                'partIMean4' => round($stats[$dept]['q4_sum'] / $count, 2),
+                'partIISatisfaction' => round($stats[$dept]['sat_sum'] / $count, 2),
+                'partIIIOverallRating' => round($stats[$dept]['overall_sum'] / $count, 2)
+            ];
+        } else {
+            $analyzedData[] = [
+                'Year' => $rYear,
+                'Month' => $rMonth,
+                'branch' => $deptMap[$dept],
+                'respondents' => '-',
+                'partIMean1' => '-',
+                'partIMean2' => '-',
+                'partIMean3' => '-',
+                'partIMean4' => '-',
+                'partIISatisfaction' => '-',
+                'partIIIOverallRating' => '-'
+            ];
+        }
+    }
+    if ($grandCount > 0) {
+            $analyzedData[] = [
+                'Year' => $rYear,
+                'Month' => $rMonth,
+                'branch' => 'OVERALL RATING',
+                'respondents' => $grandCount,
+                'partIMean1' => round($grandQ1 / $grandCount, 2),
+                'partIMean2' => round($grandQ2 / $grandCount, 2),
+                'partIMean3' => round($grandQ3 / $grandCount, 2),
+                'partIMean4' => round($grandQ4 / $grandCount, 2),
+                'partIISatisfaction' => round($grandSat / $grandCount, 2),
+                'partIIIOverallRating' => round($grandOverall / $grandCount, 2)
+            ];
+        } else {
+            $analyzedData[] = [
+                'Year' => $rYear,
+                'Month' => $rMonth,
+                'branch' => 'OVERALL RATING',
+                'respondents' => '-',
+                'partIMean1' => '-',
+                'partIMean2' => '-',
+                'partIMean3' => '-',
+                'partIMean4' => '-',
+                'partIISatisfaction' => '-',
+                'partIIIOverallRating' => '-'
+            ];
+        }
+
+    // 5. EXPORT AND DOWNLOAD (VIA JSON AJAX)
     $fileName = 'EVAL_REPORT_' . str_replace(' ', '_', $reportDate) . '.xlsx';
-    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    header('Content-Disposition: attachment;filename="'. $fileName .'"');
-    header('Cache-Control: max-age=0');
 
     $writer = new Xlsx($spreadsheet);
+    ob_start();
     $writer->save('php://output');
-    exit; 
+    $excelContent = ob_get_contents();
+    ob_end_clean();
+
+    $base64Excel = base64_encode($excelContent);
+
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => true,
+        'fileName' => $fileName,
+        'excelBase64' => $base64Excel,
+        'analyzedSummaryData' => $analyzedData,
+        'reportDate' => $reportDate
+    ]);
+    exit;
 
 } else {
-    echo "Error processing file. Please ensure you selected a CSV.";
+    header('Content-Type: application/json');
+    echo json_encode(['success' => false, 'error' => 'Error processing file. Please ensure you selected a CSV.']);
+    exit;
 }
 ?>
