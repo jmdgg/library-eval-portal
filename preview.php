@@ -41,370 +41,371 @@
     </style>
 </head>
 
-<body class="bg-gray-50 min-h-screen font-sans antialiased flex flex-col">
+<body class="bg-gray-50 flex h-screen overflow-hidden font-sans antialiased text-gray-900">
 
-    <!-- Header -->
-    <header class="bg-acad-blue text-white shadow-md border-b-4 border-acad-gold">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex items-center justify-between">
-            <div>
-                <h1 class="text-2xl font-bold tracking-tight">Library Service Evaluation</h1>
-                <p class="text-sm text-blue-200 mt-1">Dashboard & Analytical Preview</p>
-            </div>
-            <div class="flex space-x-4">
-                <a href="index.php"
-                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-acad-blue bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-acad-gold transition-colors shadow-sm">
-                    Back to Upload
-                </a>
+    <?php include 'sidebar.php'; ?>
+
+    <main class="flex-1 overflow-y-auto bg-gray-50 p-8 w-full flex flex-col">
+        <div class="max-w-7xl mx-auto w-full">
+
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <h1 class="text-3xl font-bold tracking-tight text-gray-900">Evaluation Dashboard</h1>
+                    <p class="text-sm text-gray-500 mt-1">Analytical Preview</p>
+                </div>
                 <button id="btn-export-excel"
                     class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-acad-gold hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-acad-gold transition-colors shadow-sm hidden">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                            d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
                     </svg>
-                    Export to Excel
+                    Open in File Explorer
                 </button>
             </div>
-        </div>
-    </header>
 
-    <!-- Main Content -->
-    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
-
-        <!-- Error State (Hidden by default) -->
-        <div id="error-state"
-            class="hidden flex flex-col items-center justify-center py-20 bg-white rounded-lg shadow-sm border border-gray-200">
-            <svg class="w-16 h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                </path>
-            </svg>
-            <h2 class="text-xl font-semibold text-gray-900 mb-2">No analyzed data found.</h2>
-            <p class="text-gray-500 mb-6 text-center max-w-md">Please return to the upload page and process a file.</p>
-            <a href="index.php"
-                class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-acad-blue hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-acad-blue transition-colors">
-                Return to Upload Page
-            </a>
-        </div>
-
-        <!-- Control Panel -->
-        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-8 w-full max-w-7xl">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Control Panel</h3>
-            <div class="flex flex-col sm:flex-row gap-6">
-                <!-- Year Filter -->
-                <div class="flex-1">
-                    <label for="filter-year" class="block text-sm font-medium text-gray-700 mb-1">1. Filter by
-                        Year</label>
-                    <div class="relative">
-                        <select id="filter-year"
-                            class="block w-full pl-3 pr-10 py-2.5 text-base border-gray-300 focus:outline-none focus:ring-acad-blue focus:border-acad-blue sm:text-sm rounded-md border appearance-none text-gray-900 leading-5">
-                            <option value="" disabled selected>Select Year</option>
-                            <option value="2026">2026</option>
-                            <option value="2025">2025</option>
-                            <option value="2024">2024</option>
-                            <option value="2023">2023</option>
-                            <option value="2022">2022</option>
-                        </select>
-                        <div
-                            class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-                <!-- Month Filter -->
-                <div class="flex-1">
-                    <label for="filter-month" class="block text-sm font-medium text-gray-700 mb-1">2. Filter by
-                        Month</label>
-                    <div class="relative">
-                        <select id="filter-month" disabled
-                            class="block w-full pl-3 pr-10 py-2.5 text-base border-gray-300 focus:outline-none focus:ring-acad-blue focus:border-acad-blue sm:text-sm rounded-md border appearance-none text-gray-900 leading-5 bg-gray-100 disabled:opacity-50">
-                            <option value="" disabled selected>Select Month</option>
-                            <option value="01">Jan</option>
-                            <option value="02">Feb</option>
-                            <option value="03">Mar</option>
-                            <option value="04">Apr</option>
-                            <option value="05">May</option>
-                            <option value="06">Jun</option>
-                            <option value="07">Jul</option>
-                            <option value="08">Aug</option>
-                            <option value="09">Sep</option>
-                            <option value="10">Oct</option>
-                            <option value="11">Nov</option>
-                            <option value="12">Dec</option>
-                        </select>
-                        <div
-                            class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-                <!-- Branch Filter -->
-                <div class="flex-1">
-                    <label for="filter-branch" class="block text-sm font-medium text-gray-700 mb-1">3. Filter by
-                        Branch</label>
-                    <div class="relative">
-                        <select id="filter-branch" disabled
-                            class="block w-full pl-3 pr-10 py-2.5 text-base border-gray-300 focus:outline-none focus:ring-acad-blue focus:border-acad-blue sm:text-sm rounded-md border appearance-none text-gray-900 leading-5 bg-gray-100 disabled:opacity-50">
-                            <option value="" disabled selected>Select Branch</option>
-                            <option value="OVERALL">Overall Summary</option>
-                            <option value="CIRC">CIRC</option>
-                            <option value="GEN REF">GEN REF</option>
-                            <option value="CMS">CMS</option>
-                            <option value="HSL">HSL</option>
-                            <option value="FILNA">FILNA</option>
-                            <option value="CBA">CBA</option>
-                            <option value="PS">PS</option>
-                        </select>
-                        <div
-                            class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Empty State Status Message -->
-        <div id="status-message"
-            class="bg-gray-100 text-gray-700 text-center py-10 px-6 rounded-lg border border-gray-300 shadow-sm w-full max-w-7xl mb-8 flex flex-col items-center justify-center">
-            <svg class="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            <p class="text-lg font-medium">Please select a Year and Month to view the evaluation preview.</p>
-        </div>
-
-        <!-- Dashboard Content -->
-        <div id="dashboard-content"
-            class="hidden space-y-8 bg-white p-8 rounded-lg shadow-sm border border-gray-200 text-black w-full max-w-7xl">
-
-            <div class="text-center mb-8">
-                <h2 class="text-xl font-bold uppercase tracking-wide text-gray-900">SUMMARY OF LIBRARY SERVICE
-                    EVALUATION</h2>
-                <h3 id="report-date-display" class="text-md font-bold italic uppercase mt-1 text-gray-800">DECEMBER 2022
-                </h3>
-            </div>
-
-            <!-- Dashboard Visuals -->
-            <div id="dashboard-visuals" class="mb-10 grid grid-cols-1 lg:grid-cols-3 gap-6 hidden">
-                <div class="space-y-6 lg:col-span-1">
-                    <div
-                        class="bg-blue-50 p-6 rounded-lg border border-blue-200 shadow-sm flex flex-col items-center justify-center h-32">
-                        <p class="text-sm font-semibold text-blue-800 uppercase text-center mb-2">Total Respondents</p>
-                        <p id="kpi-respondents" class="text-3xl font-bold text-blue-900">-</p>
-                    </div>
-                    <div id="card-part2"
-                        class="p-6 rounded-lg border border-gray-200 border-t-4 shadow-sm flex flex-col items-center justify-center h-32 bg-gray-50">
-                        <p class="text-sm font-semibold text-gray-800 uppercase text-center mb-2">Overall Satisfaction
-                        </p>
-                        <div class="flex items-center space-x-2 mt-1">
-                            <p id="score-part2" class="text-3xl font-bold text-gray-900">-</p>
-                            <span id="label-part2"
-                                class="px-2 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase bg-gray-100 text-gray-700 hidden"></span>
-                        </div>
-                    </div>
-                    <div id="card-part3"
-                        class="p-6 rounded-lg border border-gray-200 border-t-4 shadow-sm flex flex-col items-center justify-center h-32 bg-gray-50">
-                        <p class="text-sm font-semibold text-gray-800 uppercase text-center mb-2">Overall Rating</p>
-                        <div class="flex items-center space-x-2 mt-1">
-                            <p id="score-part3" class="text-3xl font-bold text-gray-900">-</p>
-                            <span id="label-part3"
-                                class="px-2 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase bg-gray-100 text-gray-700 hidden"></span>
-                        </div>
-                    </div>
-                </div>
-                <div
-                    class="lg:col-span-2 bg-white p-4 rounded-lg border border-gray-200 shadow-sm min-h-[300px] flex flex-col relative w-full">
-                    <div class="flex justify-end mb-2">
-                        <select id="chart-metric-select"
-                            class="block pl-3 pr-10 py-1.5 text-sm border-gray-300 focus:outline-none focus:ring-acad-blue focus:border-acad-blue rounded-md border text-gray-700 bg-gray-50 cursor-pointer">
-                            <option value="part1">Part I (Mean Rating)</option>
-                            <option value="part2">Part II (Overall Satisfaction)</option>
-                            <option value="part3" selected>Part III (Overall Rating)</option>
-                        </select>
-                    </div>
-                    <div class="flex-grow w-full relative min-h-[250px]">
-                        <canvas id="reporting-chart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Automated Service Analysis -->
-            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-10 w-full relative hidden"
-                id="automated-analysis-container">
-                <div class="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
-                    <h3 class="text-xl font-bold text-gray-900 flex items-center">
-                        <svg class="w-5 h-5 text-acad-gold mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                        </svg>
-                        Automated Service Analysis
-                    </h3>
-                    <button onclick="copyAnalysisText(this)"
-                        class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-acad-blue transition-colors">
-                        <svg class="w-4 h-4 mr-1.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
-                            </path>
-                        </svg>
-                        Copy
-                    </button>
-                </div>
-                <p id="analysis-text" class="text-gray-700 text-lg leading-relaxed">
-                    Data loaded successfully. The system detects responses across evaluated branches. Please implement
-                    an LLM analysis generation endpoint here to populate detailed programmatic service insights based on
-                    the selected filters.
+            <!-- Error State (Hidden by default) -->
+            <div id="error-state"
+                class="hidden flex flex-col items-center justify-center py-20 bg-white rounded-lg shadow-sm border border-gray-200">
+                <svg class="w-16 h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                    </path>
+                </svg>
+                <h2 class="text-xl font-semibold text-gray-900 mb-2">No analyzed data found.</h2>
+                <p class="text-gray-500 mb-6 text-center max-w-md">Please return to the upload page and process a file.
                 </p>
+                <a href="index.php"
+                    class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-acad-blue hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-acad-blue transition-colors">
+                    Return to Upload Page
+                </a>
             </div>
 
-            <!-- PART I -->
-            <div>
-                <h4 class="font-bold text-gray-900 mb-2">PART I</h4>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full border-collapse border border-black text-sm">
-                        <thead>
-                            <tr>
-                                <th
-                                    class="border border-black bg-[#fff2cc] px-2 py-3 text-center align-middle font-normal w-32">
-                                    Sections / Branch<br>Library</th>
-                                <th
-                                    class="border border-black bg-[#fff2cc] px-2 py-3 text-center align-middle font-normal w-24">
-                                    Respondents</th>
-                                <th
-                                    class="border border-black bg-[#fff2cc] px-2 py-3 text-center align-middle font-normal w-40">
-                                    The library has<br>sufficient resources<br>for my research and<br>information needs
-                                </th>
-                                <th
-                                    class="border border-black bg-[#fff2cc] px-2 py-3 text-center align-middle font-normal w-40">
-                                    Library staff provided<br>assistance in a timely and<br>helpful manner</th>
-                                <th
-                                    class="border border-black bg-[#fff2cc] px-2 py-3 text-center align-middle font-normal w-40">
-                                    The process of<br>borrowing, returning<br>and renewal of library<br>resources is
-                                </th>
-                                <th
-                                    class="border border-black bg-[#fff2cc] px-2 py-3 text-center align-middle font-normal w-40">
-                                    The information/procedure<br>provided by the library<br>staff were easy
-                                    to<br>understand</th>
-                                <th
-                                    class="border border-black bg-[#fff2cc] px-2 py-3 text-center align-middle font-bold">
-                                    MEAN RATING</th>
-                            </tr>
-                        </thead>
-                        <tbody id="part1-table-body">
-                            <!-- JS injected -->
-                        </tbody>
-                    </table>
+            <!-- Control Panel -->
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-8 w-full max-w-7xl">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Control Panel</h3>
+                <div class="flex flex-col sm:flex-row gap-6">
+                    <!-- Year Filter -->
+                    <div class="flex-1">
+                        <label for="filter-year" class="block text-sm font-medium text-gray-700 mb-1">1. Filter by
+                            Year</label>
+                        <div class="relative">
+                            <select id="filter-year"
+                                class="block w-full pl-3 pr-10 py-2.5 text-base border-gray-300 focus:outline-none focus:ring-acad-blue focus:border-acad-blue sm:text-sm rounded-md border appearance-none text-gray-900 leading-5">
+                                <option value="" disabled selected>Select Year</option>
+                                <option value="2026">2026</option>
+                                <option value="2025">2025</option>
+                                <option value="2024">2024</option>
+                                <option value="2023">2023</option>
+                                <option value="2022">2022</option>
+                            </select>
+                            <div
+                                class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Month Filter -->
+                    <div class="flex-1">
+                        <label for="filter-month" class="block text-sm font-medium text-gray-700 mb-1">2. Filter by
+                            Month</label>
+                        <div class="relative">
+                            <select id="filter-month" disabled
+                                class="block w-full pl-3 pr-10 py-2.5 text-base border-gray-300 focus:outline-none focus:ring-acad-blue focus:border-acad-blue sm:text-sm rounded-md border appearance-none text-gray-900 leading-5 bg-gray-100 disabled:opacity-50">
+                                <option value="" disabled selected>Select Month</option>
+                                <option value="01">Jan</option>
+                                <option value="02">Feb</option>
+                                <option value="03">Mar</option>
+                                <option value="04">Apr</option>
+                                <option value="05">May</option>
+                                <option value="06">Jun</option>
+                                <option value="07">Jul</option>
+                                <option value="08">Aug</option>
+                                <option value="09">Sep</option>
+                                <option value="10">Oct</option>
+                                <option value="11">Nov</option>
+                                <option value="12">Dec</option>
+                            </select>
+                            <div
+                                class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Branch Filter -->
+                    <div class="flex-1">
+                        <label for="filter-branch" class="block text-sm font-medium text-gray-700 mb-1">3. Filter by
+                            Branch</label>
+                        <div class="relative">
+                            <select id="filter-branch" disabled
+                                class="block w-full pl-3 pr-10 py-2.5 text-base border-gray-300 focus:outline-none focus:ring-acad-blue focus:border-acad-blue sm:text-sm rounded-md border appearance-none text-gray-900 leading-5 bg-gray-100 disabled:opacity-50">
+                                <option value="" disabled selected>Select Branch</option>
+                                <option value="OVERALL">Overall Summary</option>
+                                <option value="CIRC">CIRC</option>
+                                <option value="GEN REF">GEN REF</option>
+                                <option value="CMS">CMS</option>
+                                <option value="HSL">HSL</option>
+                                <option value="FILNA">FILNA</option>
+                                <option value="CBA">CBA</option>
+                                <option value="PS">PS</option>
+                            </select>
+                            <div
+                                class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- PART II -->
-            <div class="mt-8">
-                <h4 class="font-bold text-gray-900 mb-2">PART II</h4>
-                <div class="overflow-x-auto">
-                    <table class="w-full max-w-2xl border-collapse border border-black text-sm">
-                        <thead>
-                            <tr>
-                                <th
-                                    class="border border-black bg-[#fff2cc] px-2 py-3 text-center align-middle font-normal w-48">
-                                    Sections / Branch<br>Library</th>
-                                <th
-                                    class="border border-black bg-[#fff2cc] px-2 py-3 text-center align-middle font-normal">
-                                    Are you satisfied with the library<br>service you have received?</th>
-                            </tr>
-                        </thead>
-                        <tbody id="part2-table-body">
-                            <!-- JS injected -->
-                        </tbody>
-                    </table>
-                </div>
+            <!-- Empty State Status Message -->
+            <div id="status-message"
+                class="bg-gray-100 text-gray-700 text-center py-10 px-6 rounded-lg border border-gray-300 shadow-sm w-full max-w-7xl mb-8 flex flex-col items-center justify-center">
+                <svg class="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <p class="text-lg font-medium">Please select a Year and Month to view the evaluation preview.</p>
             </div>
 
-            <!-- PART III -->
-            <div class="mt-8">
-                <h4 class="font-bold text-gray-900 mb-2">PART III</h4>
-                <div class="overflow-x-auto">
-                    <table class="w-full max-w-2xl border-collapse border border-black text-sm">
-                        <thead>
-                            <tr>
-                                <th
-                                    class="border border-black bg-[#fff2cc] px-2 py-3 text-center align-middle font-normal w-48">
-                                    Sections / Branch<br>Library</th>
-                                <th
-                                    class="border border-black bg-[#fff2cc] px-2 py-3 text-center align-middle font-normal">
-                                    Overall, how would you rate the library<br>service/s we provide?</th>
-                            </tr>
-                        </thead>
-                        <tbody id="part3-table-body">
-                            <!-- JS injected -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            <!-- Dashboard Content -->
+            <div id="dashboard-content"
+                class="hidden space-y-8 bg-white p-8 rounded-lg shadow-sm border border-gray-200 text-black w-full max-w-7xl">
 
-            <!-- RATING LEGEND -->
-            <div class="mt-12">
-                <div class="flex">
-                    <table class="border-collapse text-sm ml-32 text-gray-900">
-                        <tbody>
-                            <tr>
-                                <td class="font-bold text-right pr-4 pb-1">Rating</td>
-                                <td></td>
-                            </tr>
-                            <tr>
-                                <td class="text-right pr-4">Poor</td>
-                                <td>1.00-1.80</td>
-                            </tr>
-                            <tr>
-                                <td class="text-right pr-4">Fair</td>
-                                <td>1.90-2.60</td>
-                            </tr>
-                            <tr>
-                                <td class="text-right pr-4">Good</td>
-                                <td>2.70-3.40</td>
-                            </tr>
-                            <tr>
-                                <td class="text-right pr-4">Very Good</td>
-                                <td>3.50-4.20</td>
-                            </tr>
-                            <tr>
-                                <td class="text-right pr-4">Excellent</td>
-                                <td>4.30-5.0</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div class="text-center mb-8">
+                    <h2 class="text-xl font-bold uppercase tracking-wide text-gray-900">SUMMARY OF LIBRARY SERVICE
+                        EVALUATION</h2>
+                    <h3 id="report-date-display" class="text-md font-bold italic uppercase mt-1 text-gray-800">DECEMBER
+                        2022
+                    </h3>
                 </div>
-            </div>
 
-            <!-- ANALYSIS -->
-            <div class="mt-8">
-                <h4 class="font-bold text-gray-900 mb-2">ANALYSIS</h4>
-                <div class="min-h-[100px] text-gray-800 text-sm">
-                    [Please type your manual analysis here]
+                <!-- Dashboard Visuals -->
+                <div id="dashboard-visuals" class="mb-10 grid grid-cols-1 lg:grid-cols-3 gap-6 hidden">
+                    <div class="space-y-6 lg:col-span-1">
+                        <div
+                            class="bg-blue-50 p-6 rounded-lg border border-blue-200 shadow-sm flex flex-col items-center justify-center h-32">
+                            <p class="text-sm font-semibold text-blue-800 uppercase text-center mb-2">Total Respondents
+                            </p>
+                            <p id="kpi-respondents" class="text-3xl font-bold text-blue-900">-</p>
+                        </div>
+                        <div id="card-part2"
+                            class="p-6 rounded-lg border border-gray-200 border-t-4 shadow-sm flex flex-col items-center justify-center h-32 bg-gray-50">
+                            <p class="text-sm font-semibold text-gray-800 uppercase text-center mb-2">Overall
+                                Satisfaction
+                            </p>
+                            <div class="flex items-center space-x-2 mt-1">
+                                <p id="score-part2" class="text-3xl font-bold text-gray-900">-</p>
+                                <span id="label-part2"
+                                    class="px-2 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase bg-gray-100 text-gray-700 hidden"></span>
+                            </div>
+                        </div>
+                        <div id="card-part3"
+                            class="p-6 rounded-lg border border-gray-200 border-t-4 shadow-sm flex flex-col items-center justify-center h-32 bg-gray-50">
+                            <p class="text-sm font-semibold text-gray-800 uppercase text-center mb-2">Overall Rating</p>
+                            <div class="flex items-center space-x-2 mt-1">
+                                <p id="score-part3" class="text-3xl font-bold text-gray-900">-</p>
+                                <span id="label-part3"
+                                    class="px-2 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase bg-gray-100 text-gray-700 hidden"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div
+                        class="lg:col-span-2 bg-white p-4 rounded-lg border border-gray-200 shadow-sm min-h-[300px] flex flex-col relative w-full">
+                        <div class="flex justify-end mb-2">
+                            <select id="chart-metric-select"
+                                class="block pl-3 pr-10 py-1.5 text-sm border-gray-300 focus:outline-none focus:ring-acad-blue focus:border-acad-blue rounded-md border text-gray-700 bg-gray-50 cursor-pointer">
+                                <option value="part1">Part I (Mean Rating)</option>
+                                <option value="part2">Part II (Overall Satisfaction)</option>
+                                <option value="part3" selected>Part III (Overall Rating)</option>
+                            </select>
+                        </div>
+                        <div class="flex-grow w-full relative min-h-[250px]">
+                            <canvas id="reporting-chart"></canvas>
+                        </div>
+                    </div>
                 </div>
+
+                <!-- Automated Service Analysis -->
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-10 w-full relative hidden"
+                    id="automated-analysis-container">
+                    <div class="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
+                        <h3 class="text-xl font-bold text-gray-900 flex items-center">
+                            <svg class="w-5 h-5 text-acad-gold mr-2" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                            Automated Service Analysis
+                        </h3>
+                        <button onclick="copyAnalysisText(this)"
+                            class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-acad-blue transition-colors">
+                            <svg class="w-4 h-4 mr-1.5 text-gray-500" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+                                </path>
+                            </svg>
+                            Copy
+                        </button>
+                    </div>
+                    <p id="analysis-text" class="text-gray-700 text-lg leading-relaxed">
+                        Data loaded successfully. The system detects responses across evaluated branches. Please
+                        implement
+                        an LLM analysis generation endpoint here to populate detailed programmatic service insights
+                        based on
+                        the selected filters.
+                    </p>
+                </div>
+
+                <!-- PART I -->
+                <div>
+                    <h4 class="font-bold text-gray-900 mb-2">PART I</h4>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full border-collapse border border-black text-sm">
+                            <thead>
+                                <tr>
+                                    <th
+                                        class="border border-black bg-[#fff2cc] px-2 py-3 text-center align-middle font-normal w-32">
+                                        Sections / Branch<br>Library</th>
+                                    <th
+                                        class="border border-black bg-[#fff2cc] px-2 py-3 text-center align-middle font-normal w-24">
+                                        Respondents</th>
+                                    <th
+                                        class="border border-black bg-[#fff2cc] px-2 py-3 text-center align-middle font-normal w-40">
+                                        The library has<br>sufficient resources<br>for my research and<br>information
+                                        needs
+                                    </th>
+                                    <th
+                                        class="border border-black bg-[#fff2cc] px-2 py-3 text-center align-middle font-normal w-40">
+                                        Library staff provided<br>assistance in a timely and<br>helpful manner</th>
+                                    <th
+                                        class="border border-black bg-[#fff2cc] px-2 py-3 text-center align-middle font-normal w-40">
+                                        The process of<br>borrowing, returning<br>and renewal of library<br>resources is
+                                    </th>
+                                    <th
+                                        class="border border-black bg-[#fff2cc] px-2 py-3 text-center align-middle font-normal w-40">
+                                        The information/procedure<br>provided by the library<br>staff were easy
+                                        to<br>understand</th>
+                                    <th
+                                        class="border border-black bg-[#fff2cc] px-2 py-3 text-center align-middle font-bold">
+                                        MEAN RATING</th>
+                                </tr>
+                            </thead>
+                            <tbody id="part1-table-body">
+                                <!-- JS injected -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- PART II -->
+                <div class="mt-8">
+                    <h4 class="font-bold text-gray-900 mb-2">PART II</h4>
+                    <div class="overflow-x-auto">
+                        <table class="w-full max-w-2xl border-collapse border border-black text-sm">
+                            <thead>
+                                <tr>
+                                    <th
+                                        class="border border-black bg-[#fff2cc] px-2 py-3 text-center align-middle font-normal w-48">
+                                        Sections / Branch<br>Library</th>
+                                    <th
+                                        class="border border-black bg-[#fff2cc] px-2 py-3 text-center align-middle font-normal">
+                                        Are you satisfied with the library<br>service you have received?</th>
+                                </tr>
+                            </thead>
+                            <tbody id="part2-table-body">
+                                <!-- JS injected -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- PART III -->
+                <div class="mt-8">
+                    <h4 class="font-bold text-gray-900 mb-2">PART III</h4>
+                    <div class="overflow-x-auto">
+                        <table class="w-full max-w-2xl border-collapse border border-black text-sm">
+                            <thead>
+                                <tr>
+                                    <th
+                                        class="border border-black bg-[#fff2cc] px-2 py-3 text-center align-middle font-normal w-48">
+                                        Sections / Branch<br>Library</th>
+                                    <th
+                                        class="border border-black bg-[#fff2cc] px-2 py-3 text-center align-middle font-normal">
+                                        Overall, how would you rate the library<br>service/s we provide?</th>
+                                </tr>
+                            </thead>
+                            <tbody id="part3-table-body">
+                                <!-- JS injected -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- RATING LEGEND -->
+                <div class="mt-12">
+                    <div class="flex">
+                        <table class="border-collapse text-sm ml-32 text-gray-900">
+                            <tbody>
+                                <tr>
+                                    <td class="font-bold text-right pr-4 pb-1">Rating</td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-right pr-4">Poor</td>
+                                    <td>1.00-1.80</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-right pr-4">Fair</td>
+                                    <td>1.90-2.60</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-right pr-4">Good</td>
+                                    <td>2.70-3.40</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-right pr-4">Very Good</td>
+                                    <td>3.50-4.20</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-right pr-4">Excellent</td>
+                                    <td>4.30-5.0</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ANALYSIS -->
+                <div class="mt-8">
+                    <h4 class="font-bold text-gray-900 mb-2">ANALYSIS</h4>
+                    <div class="min-h-[100px] text-gray-800 text-sm">
+                        [Please type your manual analysis here]
+                    </div>
+                </div>
+
             </div>
 
         </div>
 
-    </main>
-
-    <!-- Footer -->
-    <footer class="bg-white border-t border-gray-200 mt-auto">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- Footer -->
+        <footer class="mt-auto pt-8 pb-4">
             <p class="text-center text-sm text-gray-500">
                 &copy; <?php echo date('Y'); ?> Library Service Evaluation Portal. All rights reserved.
             </p>
-        </div>
-    </footer>
+        </footer>
+    </main>
 
     <script>
         function getRatingColorStyle(score) {
@@ -451,7 +452,22 @@
             if (downloadUrl) {
                 exportBtn.classList.remove('hidden');
                 exportBtn.addEventListener('click', () => {
-                    window.location.href = downloadUrl; // Triggers the file download
+                    fetch('open_folder.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ filepath: downloadUrl })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status !== 'success') {
+                            alert("Could not open folder: " + data.message);
+                            console.error('Failed to open folder:', data.message);
+                        }
+                    })
+                    .catch(err => {
+                        alert("Fetch execution error: " + err);
+                        console.error('Fetch error:', err);
+                    });
                 });
             }
 
