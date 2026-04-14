@@ -1,5 +1,7 @@
 <?php
 // delete_record.php
+require_once 'db_connect.php';
+
 header('Content-Type: application/json');
 
 // Get raw POST data
@@ -12,34 +14,20 @@ if (!$request || !isset($request['id'])) {
 }
 
 $idToDelete = $request['id'];
-$historyFile = 'history_log.json';
 
-if (!file_exists($historyFile)) {
-    echo json_encode(["status" => "error", "message" => "History log file not found."]);
-    exit;
-}
+try {
+    // 1. Find the file (download_url)
+    $stmtFind = $pdo->prepare("SELECT download_url FROM GENERATED_REPORT WHERE report_id = :id");
+    $stmtFind->execute([':id' => $idToDelete]);
+    $report = $stmtFind->fetch(PDO::FETCH_ASSOC);
 
-$json = file_get_contents($historyFile);
-$data = json_decode($json, true);
-
-if (!is_array($data)) {
-    echo json_encode(["status" => "error", "message" => "Invalid complete history log format."]);
-    exit;
-}
-
-$recordFound = false;
-$newArray = [];
-
-foreach ($data as $entry) {
-    if (isset($entry['id']) && $entry['id'] === $idToDelete) {
-        $recordFound = true;
-        
-        // File Cleanup: Delete the associated .xlsx file
-        if (!empty($entry['downloadUrl'])) {
-            // Remove leading slashes/backslashes if any to prevent direct absolute path injections
-            $safePath = ltrim($entry['downloadUrl'], '/\\');
+    if ($report) {
+        // Physical File Cleanup
+        $downloadUrl = $report['download_url'];
+        if (!empty($downloadUrl)) {
+            $safePath = ltrim($downloadUrl, '/\\');
             $filePath = __DIR__ . '/' . $safePath;
-            
+
             if (file_exists($filePath) && is_file($filePath)) {
                 // Additional safety to make sure it's strictly within the exports directory
                 if (strpos(realpath($filePath), realpath(__DIR__ . '/exports')) === 0) {
@@ -47,21 +35,21 @@ foreach ($data as $entry) {
                 }
             }
         }
-        // Do not add this entry to $newArray (effectively deleting it)
+
+        // 2. Delete the record from GENERATED_REPORT
+        $stmtDeleteReport = $pdo->prepare("DELETE FROM GENERATED_REPORT WHERE report_id = :id");
+        $stmtDeleteReport->execute([':id' => $idToDelete]);
+
+        // 3. Orphan Cleanup: Delete EVALUATION_PERIOD if no remaining reports
+        $stmtCleanupPeriods = $pdo->prepare("DELETE FROM EVALUATION_PERIOD WHERE period_id NOT IN (SELECT period_id FROM GENERATED_REPORT)");
+        $stmtCleanupPeriods->execute();
+
+        echo json_encode(["status" => "success"]);
     } else {
-        $newArray[] = $entry; // Re-indexes automatically
+        echo json_encode(["status" => "error", "message" => "Record not found in the database."]);
     }
-}
 
-if (!$recordFound) {
-    echo json_encode(["status" => "error", "message" => "Record not found in the ledger."]);
-    exit;
-}
-
-// Save the re-indexed array back to JSON file
-if (file_put_contents($historyFile, json_encode($newArray, JSON_PRETTY_PRINT)) !== false) {
-    echo json_encode(["status" => "success"]);
-} else {
-    echo json_encode(["status" => "error", "message" => "Failed to update the history log file."]);
+} catch (PDOException $e) {
+    echo json_encode(["status" => "error", "message" => $e->getMessage()]);
 }
 ?>
