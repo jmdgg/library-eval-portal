@@ -1,0 +1,214 @@
+[
+    {
+        "id": "rep_69ccc3602227b",
+        "reportDate": "DECEMBER 2023",
+        "year": "2023",
+        "month": "12",
+        "downloadUrl": "exports\/2023\/EVAL_REPORT_DECEMBER_2023_rep_69ccc3602227b.xlsx",
+        "timestamp": 1775027042,
+        "data": [
+            {
+                "branch": "CIRC",
+                "Year": "2023",
+                "Month": "12",
+                "respondents": 23,
+                "partIMean1": 4.78,
+                "partIMean2": 4.96,
+                "partIMean3": 4.96,
+                "partIMean4": 4.96,
+                "partIISatisfaction": 5,
+                "partIIIOverallRating": 4.91
+            },
+            {
+                "branch": "GEN REF",
+                "Year": "2023",
+                "Month": "12",
+                "respondents": 18,
+                "partIMean1": 4.94,
+                "partIMean2": 4.94,
+                "partIMean3": 4.94,
+                "partIMean4": 4.94,
+                "partIISatisfaction": 5,
+                "partIIIOverallRating": 4.89
+            },
+            {
+                "branch": "CMS",
+                "Year": "2023",
+                "Month": "12",
+                "respondents": 4,
+                "partIMean1": 4.75,
+                "partIMean2": 5,
+                "partIMean3": 4.75,
+                "partIMean4": 5,
+                "partIISatisfaction": 5,
+                "partIIIOverallRating": 4.75
+            },
+            {
+                "branch": "HSL",
+                "Year": "2023",
+                "Month": "12",
+                "respondents": 11,
+                "partIMean1": 4.82,
+                "partIMean2": 5,
+                "partIMean3": 5,
+                "partIMean4": 5,
+                "partIISatisfaction": 5,
+                "partIIIOverallRating": 4.82
+            },
+            {
+                "branch": "FILNA",
+                "Year": "2023",
+                "Month": "12",
+                "respondents": 9,
+                "partIMean1": 4.78,
+                "partIMean2": 5,
+                "partIMean3": 5,
+                "partIMean4": 5,
+                "partIISatisfaction": 5,
+                "partIIIOverallRating": 4.89
+            },
+            {
+                "branch": "CBA",
+                "Year": "2023",
+                "Month": "12",
+                "respondents": 29,
+                "partIMean1": 4.9,
+                "partIMean2": 4.93,
+                "partIMean3": 4.93,
+                "partIMean4": 4.93,
+                "partIISatisfaction": 5,
+                "partIIIOverallRating": 4.9
+            },
+            {
+                "branch": "PS",
+                "Year": "2023",
+                "Month": "12",
+                "respondents": 19,
+                "partIMean1": 4.74,
+                "partIMean2": 5,
+                "partIMean3": 4.95,
+                "partIMean4": 4.95,
+                "partIISatisfaction": 5,
+                "partIIIOverallRating": 4.89
+            },
+            {
+                "branch": "OVERALL RATING",
+                "Year": "2023",
+                "Month": "12",
+                "respondents": 113,
+                "partIMean1": 4.83,
+                "partIMean2": 4.96,
+                "partIMean3": 4.95,
+                "partIMean4": 4.96,
+                "partIISatisfaction": 5,
+                "partIIIOverallRating": 4.88
+            }
+        ]
+    },
+    {
+        "id": "rep_69ccad2b68361",
+        "reportDate": "DECEMBER 2022",
+        "year": "2022",
+        "month": "12",
+        "downloadUrl": "exports\/2022\/EVAL_REPORT_DECEMBER_2022_rep_69ccad2b68361.xlsx",
+        "timestamp": 1775021357,
+        "data": [
+            {
+                "branch": "CIRC",
+                "Year": "2022",
+                "Month": "12",
+                "respondents": 23,
+                "partIMean1": 4.78,
+                "partIMean2": 4.96,
+                "partIMean3": 4.96,
+                "partIMean4": 4.96,
+                "partIISatisfaction": 5,
+                "partIIIOverallRating": 4.91
+            },
+            {
+                "branch": "GEN REF",
+                "Year": "2022",
+                "Month": "12",
+                "respondents": 18,
+                "partIMean1": 4.94,
+                "partIMean2": 4.94,
+                "partIMean3": 4.94,
+                "partIMean4": 4.94,
+                "partIISatisfaction": 5,
+                "partIIIOverallRating": 4.89
+            },
+            {
+                "branch": "CMS",
+                "Year": "2022",
+                "Month": "12",
+                "respondents": 4,
+                "partIMean1": 4.75,
+                "partIMean2": 5,
+                "partIMean3": 4.75,
+                "partIMean4": 5,
+                "partIISatisfaction": 5,
+                "partIIIOverallRating": 4.75
+            },
+            {
+                "branch": "HSL",
+                "Year": "2022",
+                "Month": "12",
+                "respondents": 11,
+                "partIMean1": 4.82,
+                "partIMean2": 5,
+                "partIMean3": 5,
+                "partIMean4": 5,
+                "partIISatisfaction": 5,
+                "partIIIOverallRating": 4.82
+            },
+            {
+                "branch": "FILNA",
+                "Year": "2022",
+                "Month": "12",
+                "respondents": 9,
+                "partIMean1": 4.78,
+                "partIMean2": 5,
+                "partIMean3": 5,
+                "partIMean4": 5,
+                "partIISatisfaction": 5,
+                "partIIIOverallRating": 4.89
+            },
+            {
+                "branch": "CBA",
+                "Year": "2022",
+                "Month": "12",
+                "respondents": 29,
+                "partIMean1": 4.9,
+                "partIMean2": 4.93,
+                "partIMean3": 4.93,
+                "partIMean4": 4.93,
+                "partIISatisfaction": 5,
+                "partIIIOverallRating": 4.9
+            },
+            {
+                "branch": "PS",
+                "Year": "2022",
+                "Month": "12",
+                "respondents": 19,
+                "partIMean1": 4.74,
+                "partIMean2": 5,
+                "partIMean3": 4.95,
+                "partIMean4": 4.95,
+                "partIISatisfaction": 5,
+                "partIIIOverallRating": 4.89
+            },
+            {
+                "branch": "OVERALL RATING",
+                "Year": "2022",
+                "Month": "12",
+                "respondents": 113,
+                "partIMean1": 4.83,
+                "partIMean2": 4.96,
+                "partIMean3": 4.95,
+                "partIMean4": 4.96,
+                "partIISatisfaction": 5,
+                "partIIIOverallRating": 4.88
+            }
+        ]
+    }
+]
