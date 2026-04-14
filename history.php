@@ -1,26 +1,28 @@
 <?php
 // history.php
+require_once 'db_connect.php';
 
-$historyFile = 'history_log.json';
 $reportsByYear = [];
 
-if (file_exists($historyFile)) {
-    $json = file_get_contents($historyFile);
-    $data = json_decode($json, true);
+try {
+    $stmt = $pdo->query("SELECT p.eval_month, p.eval_year, r.report_id, r.file_name, r.download_url, r.dashboard_data, r.generation_date FROM EVALUATION_PERIOD p JOIN GENERATED_REPORT r ON p.period_id = r.period_id ORDER BY r.generation_date DESC");
+    $data = $stmt->fetchAll();
 
-    if (is_array($data)) {
+    if ($data) {
         foreach ($data as $entry) {
-            $year = isset($entry['year']) ? $entry['year'] : 'Unknown Year';
+            $year = isset($entry['eval_year']) ? $entry['eval_year'] : 'Unknown Year';
             if (!isset($reportsByYear[$year])) {
                 $reportsByYear[$year] = [];
             }
             $reportsByYear[$year][] = $entry;
         }
     }
-}
 
-// Sort years descending
-krsort($reportsByYear);
+    // Sort years descending
+    krsort($reportsByYear);
+} catch (PDOException $e) {
+    // Fallback on error
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -74,11 +76,12 @@ krsort($reportsByYear);
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 <?php foreach ($reports as $report): ?>
                                     <?php
-                                    $reportId = htmlspecialchars($report['id'] ?? '');
-                                    $reportDate = htmlspecialchars($report['reportDate'] ?? 'Unknown Date');
-                                    $downloadUrl = htmlspecialchars($report['downloadUrl'] ?? '#');
-                                    // Make sure we encode the data securely to handle potential HTML inside
-                                    $reportDataJson = htmlspecialchars(json_encode($report['data'] ?? []), ENT_QUOTES, 'UTF-8');
+                                    $reportId = htmlspecialchars($report['report_id'] ?? '');
+                                    $reportDateStr = ($report['eval_month'] ?? '') . ' ' . ($report['eval_year'] ?? '');
+                                    $reportDate = htmlspecialchars(trim($reportDateStr) ?: 'Unknown Date');
+                                    $downloadUrl = htmlspecialchars($report['download_url'] ?? '#');
+                                    // The database stores JSON string in dashboard_data, so no need to json_encode it again
+                                    $reportDataJson = htmlspecialchars($report['dashboard_data'] ?? '[]', ENT_QUOTES, 'UTF-8');
                                     ?>
                                     <div
                                         class="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 border border-gray-200 flex flex-col pt-5">

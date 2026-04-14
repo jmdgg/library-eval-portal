@@ -1,4 +1,5 @@
 <?php
+require_once 'db_connect.php';
 require 'vendor/autoload.php';
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -383,35 +384,36 @@ if (isset($_FILES['csv_file']) && $_FILES['csv_file']['error'] == 0) {
     $writer = new Xlsx($spreadsheet);
     $writer->save($savePath);
 
-    // --- PHASE 2: The Flat-File JSON Ledger ---
-    $ledgerPath = __DIR__ . '/history_log.json';
-    $ledgerData = [];
+    // --- PHASE 2: Save to MySQL Database (Replacing JSON) ---
+    // Extract Date Variables
+    $evalDateParts = explode(' ', $reportDate);
+    $eval_month = isset($evalDateParts[0]) ? $evalDateParts[0] : '';
+    $eval_year = isset($evalDateParts[1]) ? $evalDateParts[1] : '';
 
-    // Read existing ledger if it exists
-    if (file_exists($ledgerPath)) {
-        $existingContent = file_get_contents($ledgerPath);
-        $parsed = json_decode($existingContent, true);
-        if (is_array($parsed)) {
-            $ledgerData = $parsed;
-        }
+    // SQL Insert 1 (Evaluation Period)
+    $stmt = $pdo->prepare("SELECT period_id FROM EVALUATION_PERIOD WHERE eval_month = :eval_month AND eval_year = :eval_year");
+    $stmt->execute([':eval_month' => $eval_month, ':eval_year' => $eval_year]);
+    $periodRow = $stmt->fetch();
+
+    if ($periodRow) {
+        $period_id = $periodRow['period_id'];
+    } else {
+        $insertPeriodStmt = $pdo->prepare("INSERT INTO EVALUATION_PERIOD (eval_month, eval_year, is_processed) VALUES (:eval_month, :eval_year, 1)");
+        $insertPeriodStmt->execute([
+            ':eval_month' => $eval_month,
+            ':eval_year' => $eval_year
+        ]);
+        $period_id = $pdo->lastInsertId();
     }
 
-    // Create the new historical record
-    $newEntry = [
-        'id' => $recordId,
-        'reportDate' => $reportDate,
-        'year' => $exportYear,
-        'month' => isset($jsonMonth) ? $jsonMonth : date('m'),
-        'downloadUrl' => $downloadUrl,
-        'timestamp' => time(),
-        'data' => $frontendJSON // We save the raw math so the dashboard can load it instantly
-    ];
-
-    // Prepend the new entry so the newest reports are always at the top of the list
-    array_unshift($ledgerData, $newEntry);
-
-    // Save the updated ledger back to the server
-    file_put_contents($ledgerPath, json_encode($ledgerData, JSON_PRETTY_PRINT));
+    // SQL Insert 2 (Generated Report)
+    $insertReportStmt = $pdo->prepare("INSERT INTO GENERATED_REPORT (period_id, file_name, download_url, dashboard_data) VALUES (:period_id, :file_name, :download_url, :dashboard_data)");
+    $insertReportStmt->execute([
+        ':period_id' => $period_id,
+        ':file_name' => $fileName,
+        ':download_url' => $downloadUrl,
+        ':dashboard_data' => json_encode($frontendJSON)
+    ]);
 
     // --- FINAL: Send the response back to the browser ---
     header('Content-Type: application/json');
