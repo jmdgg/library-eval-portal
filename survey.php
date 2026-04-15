@@ -27,13 +27,13 @@ $form_data = [
         '1' => 'Strongly Disagree'
     ],
     'libraries' => [
-        'Circulation Section',
-        'General Reference Section',
-        'Computer and Multimedia Services (CMS)',
-        'Health Sciences Library',
-        'Filipiniana Section',
-        'College of Business and Accountancy Library',
-        'PS Library'
+        '1' => 'Circulation Section',
+        '2' => 'General Reference Section',
+        '3' => 'Computer and Multimedia Services (CMS)',
+        '4' => 'Health Sciences Library',
+        '5' => 'Filipiniana Section',
+        '6' => 'College of Business and Accountancy Library',
+        '7' => 'PS Library'
     ],
     'satisfaction_options' => ['Yes', 'No'],
     'rating_options' => ['Excellent', 'Very Good', 'Good', 'Fair', 'Needs Improvement']
@@ -126,17 +126,17 @@ $form_data = [
             </div>
             
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-4">Which Library accommodated your request?</label>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <?php foreach ($form_data['libraries'] as $library): ?>
-                    <label class="block cursor-pointer relative h-full group">
-                        <div class="w-full h-full flex items-center justify-start px-4 py-3.5 rounded-xl border-2 border-gray-100 bg-gray-50 text-gray-600 has-[:checked]:bg-blue-50 has-[:checked]:border-blue-600 has-[:checked]:text-blue-700 hover:border-blue-300 hover:bg-blue-50/50 transition-all font-medium text-sm shadow-sm element-press">
-                            <input type="radio" name="library_accommodated" value="<?php echo htmlspecialchars($library); ?>" class="sr-only" required>
-                            <div class="w-3 h-3 rounded-full border-2 border-gray-300 mr-3 group-has-[:checked]:bg-blue-600 group-has-[:checked]:border-blue-600 transition-colors"></div>
-                            <?php echo htmlspecialchars($library); ?>
-                        </div>
-                    </label>
-                    <?php endforeach; ?>
+                <label for="department_id" class="block text-sm font-semibold text-gray-700 mb-4">Which Library accommodated your request?</label>
+                <div class="relative">
+                    <select id="department_id" name="department_id" required class="w-full appearance-none rounded-xl border-2 border-gray-100 bg-gray-50 px-5 py-4 text-gray-700 font-medium focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-600 outline-none transition-all cursor-pointer shadow-sm">
+                        <option value="" disabled selected>Select a Library Department</option>
+                        <?php foreach ($form_data['libraries'] as $id => $name): ?>
+                        <option value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($name); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-blue-600">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                    </div>
                 </div>
             </div>
 
