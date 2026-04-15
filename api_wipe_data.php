@@ -1,5 +1,7 @@
 <?php
 // api_wipe_data.php
+require_once 'db_connect.php';
+
 header('Content-Type: application/json');
 
 $rawData = file_get_contents("php://input");
@@ -10,10 +12,15 @@ if (!$request || empty($request['confirm']) || $request['confirm'] !== true) {
     exit;
 }
 
-// Action 1: Clear Ledger (history_log.json)
-$ledgerPath = __DIR__ . '/history_log.json';
-if (file_put_contents($ledgerPath, json_encode([], JSON_PRETTY_PRINT)) === false) {
-    echo json_encode(["status" => "error", "message" => "Failed to clear ledger."]);
+// Action 1: Clear Database
+try {
+    $pdo->beginTransaction();
+    $pdo->exec("DELETE FROM GENERATED_REPORT");
+    $pdo->exec("DELETE FROM EVALUATION_PERIOD");
+    $pdo->commit();
+} catch (PDOException $e) {
+    $pdo->rollBack();
+    echo json_encode(["status" => "error", "message" => "Failed to clear database: " . $e->getMessage()]);
     exit;
 }
 
