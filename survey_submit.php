@@ -1,24 +1,19 @@
 <?php
 /**
  * survey_submit.php
- * Production-ready submission handler for Path A (Denormalized Demographics)
- * AUF Library Service Evaluation Portal
+ * Flat "Wide Table" Architecture
  */
 
 require_once 'db_connect.php';
 
-// 1. Gatekeeper: Reject non-POST requests
+// Gatekeeper: Reject non-POST requests
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header("Location: survey.php?error=invalid_request");
     exit;
 }
 
 try {
-    // 2. Begin Transaction (All-or-Nothing)
-    $pdo->beginTransaction();
-
-    // 3. Extract Demographics & Period
-    // We look up the active evaluation period automatically based on the submission date
+    // 1. Period Lookup (Automatic mapping based on submission date)
     $submission_date = $_POST['date'] ?? date('Y-m-d');
     $month_str = strtoupper(date('F', strtotime($submission_date)));
     $year_int = (int)date('Y', strtotime($submission_date));
@@ -28,99 +23,76 @@ try {
     $period = $period_query->fetch();
 
     if (!$period) {
-        throw new Exception("Evaluation period for $month_str $year_int is not open. Please contact the administrator.");
+        throw new Exception("Evaluation period for $month_str $year_int is not active.");
     }
     $period_id = $period['period_id'];
 
-    $dept_id     = (int)($_POST['department_id'] ?? 0);
-    $full_name   = trim($_POST['full_name'] ?? '');
-    $role        = trim($_POST['role'] ?? '');
-    $college     = trim($_POST['college'] ?? '');
-    $dept_name   = trim($_POST['academic_department'] ?? $_POST['department'] ?? ''); // Snapshot text
-
-    // 5. Capture Qualitative Feedback
-    $services    = isset($_POST['services']) ? implode(', ', $_POST['services']) : '';
-    $satisfied   = $_POST['satisfied'] ?? '';
-    $rating      = $_POST['overall_rating'] ?? '';
-    $recoms      = trim($_POST['recommendations'] ?? '');
-    $comments    = trim($_POST['comments'] ?? '');
-
-    // Validation: Ensure required fields aren't empty
-    if (!$dept_id || empty($full_name) || empty($role) || empty($satisfied) || empty($rating)) {
-        throw new Exception("Missing required form fields.");
-    }
-
-    // 6. Insert Parent Record (SURVEY_SUBMISSION)
-    $sql_parent = "INSERT INTO SURVEY_SUBMISSION 
-        (period_id, department_id, full_name, role, college, academic_department, services_availed, satisfied, overall_rating, recommendations, comments, submission_timestamp) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+    // 2. Extract Demographics & Metadata
+    $email = filter_var($_POST['email'] ?? '', FILTER_SANITIZE_EMAIL);
+    $department_id = (int)($_POST['department_id'] ?? 0);
+    $role = $_POST['role'] ?? '';
+    $college = $_POST['college'] ?? '';
+    $academic_department = $_POST['academic_department'] ?? '';
     
-    $stmt_parent = $pdo->prepare($sql_parent);
-    $stmt_parent->execute([
-        $period_id,
-        $dept_id,
-        $full_name,
-        $role,
-        $college,
-        $dept_name,
-        $services,
-        $satisfied,
-        $rating,
-        $recoms,
+    // Process Checkboxes: Convert array to comma-separated string safely
+    $services_raw = $_POST['services'] ?? [];
+    $services_availed = is_array($services_raw) ? implode(', ', array_map('htmlspecialchars', $services_raw)) : '';
+
+    // 3. Extract Likert Scores
+    // Defaulting to 0 if missing, but HTML5 validation should catch this first
+    $q1_resources = (int)($_POST['feedback']['resources'] ?? 0);
+    $q2_staff = (int)($_POST['feedback']['staff_assistance'] ?? 0);
+    $q3_process = (int)($_POST['feedback']['process'] ?? 0);
+    $q4_procedures = (int)($_POST['feedback']['procedures'] ?? 0);
+
+    // 4. Extract Overall Ratings & Open Text
+    $is_satisfied = $_POST['satisfied'] ?? '';
+    $overall_rating = $_POST['overall_rating'] ?? '';
+    $recommendations = htmlspecialchars($_POST['recommendations'] ?? '');
+    $comments = htmlspecialchars($_POST['comments'] ?? '');
+
+    // 5. The Single, Clean Insert
+    $stmt = $pdo->prepare("
+        INSERT INTO survey_submission (
+            period_id, department_id, email, submission_date, role, college, academic_department, 
+            services_availed, q1_resources, q2_staff_assistance, q3_process, q4_procedures, 
+            is_satisfied, overall_rating, recommendations, comments
+        ) VALUES (
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        )
+    ");
+
+    $stmt->execute([
+        $period_id, 
+        $department_id, 
+        $email, 
+        $submission_date, 
+        $role, 
+        $college, 
+        $academic_department, 
+        $services_availed, 
+        $q1_resources, 
+        $q2_staff, 
+        $q3_process, 
+        $q4_procedures, 
+        $is_satisfied, 
+        $overall_rating, 
+        $recommendations, 
         $comments
     ]);
 
-    $submission_id = $pdo->lastInsertId();
-
-    // 7. Insert Child Records (RESPONSE_DETAIL)
-    // Map the feedback[key] => score array
-    if (isset($_POST['feedback']) && is_array($_POST['feedback'])) {
-        // Fetch all questions from the database to map keys to IDs
-        // Mapping assumes the order seeded in seed_database.php or matches by text
-        $q_stmt = $pdo->query("SELECT question_id, question_text FROM question_metric");
-        $questions = $q_stmt->fetchAll();
-        
-        // Define a mapping between form keys and question text snippets
-        $key_map = [
-            'resources'         => 'sufficient resources',
-            'staff_assistance'  => 'staff provided assistance',
-            'process'           => 'borrowing, returning and renewal',
-            'procedures'        => 'easy to understand'
-        ];
-
-        $detail_stmt = $pdo->prepare("INSERT INTO RESPONSE_DETAIL (submission_id, question_id, given_score) VALUES (?, ?, ?)");
-
-        foreach ($_POST['feedback'] as $key => $score) {
-            $score_int = (int)$score;
-            if ($score_int < 1 || $score_int > 5) continue;
-
-            $found_qid = null;
-            $search_term = $key_map[$key] ?? '';
-
-            foreach ($questions as $q) {
-                if (stripos($q['question_text'], $search_term) !== false) {
-                    $found_qid = $q['question_id'];
-                    break;
-                }
-            }
-
-            if ($found_qid) {
-                $detail_stmt->execute([$submission_id, $found_qid, $score_int]);
-            }
-        }
-    }
-
-    // 8. Success!
-    $pdo->commit();
+    // Success -> Redirect
     header("Location: thank_you.php?status=success");
     exit;
 
 } catch (Exception $e) {
-    if ($pdo->inTransaction()) {
-        $pdo->rollBack();
-    }
+    // Log the error securely for debugging
     error_log("Survey Submission Error: " . $e->getMessage());
-    header("Location: survey.php?error=submission_failed&msg=" . urlencode($e->getMessage()));
+
+    // TEMPORARY DEBUGGING: To see the error on screen during testing, uncomment the line below.
+    // die("Database Error: " . $e->getMessage());
+
+    // Redirect to error state
+    header("Location: survey.php?error=submission_failed");
     exit;
 }
-?>

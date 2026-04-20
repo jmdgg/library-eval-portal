@@ -74,11 +74,17 @@ $form_data = [
         </div>
 
         <!-- Section 1: Demographics -->
+       
         <section class="space-y-6">
             <div class="flex items-center space-x-3 border-b border-gray-100 pb-3 mb-6">
                 <span class="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-sm">1</span>
                 <h3 class="text-xl font-bold text-gray-800">Demographics</h3>
             </div>
+
+              <div class="space-y-2">
+    <label for="email" class="block text-sm font-semibold text-gray-700">Email Address <span class="text-red-500">*</span></label>
+    <input type="email" name="email" id="email" required placeholder="e.g., x@auf.edu.ph" class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500">
+</div>
             
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
