@@ -8,7 +8,7 @@
 session_start();
 
 // If your db_connect.php is in the root folder, adjust this path (e.g., '../db_connect.php')
-require_once 'db_connect.php';
+require_once '../db_connect.php';
 
 // 2. Reject non-POST requests
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -59,7 +59,7 @@ try {
     $update_stmt->execute([$user['admin_id']]);
 
     // 9. Redirect to the Dashboard
-    header("Location: index.php");
+    header("Location: dashboard.php");
     exit;
 
 } catch (Exception $e) {
