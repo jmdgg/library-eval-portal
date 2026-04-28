@@ -1,13 +1,13 @@
 <?php
 // settings.php
-$ledgerPath = __DIR__ . '/history_log.json';
+require_once 'db_connect.php';
+
 $totalRecords = 0;
-if (file_exists($ledgerPath)) {
-    $content = file_get_contents($ledgerPath);
-    $data = json_decode($content, true);
-    if (is_array($data)) {
-        $totalRecords = count($data);
-    }
+try {
+    $stmt = $pdo->query("SELECT COUNT(*) FROM GENERATED_REPORT");
+    $totalRecords = $stmt->fetchColumn();
+} catch (PDOException $e) {
+    // If the table doesn't exist yet or db error, leave at 0
 }
 ?>
 <!DOCTYPE html>
