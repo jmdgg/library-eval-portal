@@ -331,6 +331,21 @@ try {
         }
     }
 
+    // ========================================================================
+    // 7.5. CREATE THE AUDIT LOG ENTRY
+    // ========================================================================
+    $action_type = "EXPORT_MASTER";
+    $action_details = "Exported Master Template for date range: " . $reportDateLabel;
+    $ip_address = $_SERVER['REMOTE_ADDR'] ?? 'UNKNOWN';
+    $admin_id = $_SESSION['admin_id'];
+
+    $audit_stmt = $pdo->prepare("
+        INSERT INTO audit_log (admin_id, action_type, action_details, ip_address) 
+        VALUES (?, ?, ?, ?)
+    ");
+    $audit_stmt->execute([$admin_id, $action_type, $action_details, $ip_address]);
+
+
     // 8. STREAM THE FILE DIRECTLY TO THE BROWSER
     $safeDate = str_replace(' ', '_', $reportDateLabel);
     $filename = "EVAL_REPORT_{$safeDate}.xlsx";

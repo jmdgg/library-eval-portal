@@ -38,8 +38,10 @@ $role_display = $is_superadmin ? 'Super Administrator' : 'Branch Administrator';
         <header class="bg-white shadow-sm border-b border-gray-200 h-16 flex items-center justify-between px-8">
             <div>
                 <h1 class="text-xl font-bold text-gray-800">Library Evaluation Dashboard</h1>
-                <p class="text-xs text-gray-500">Welcome, <?php echo htmlspecialchars($username); ?> &mdash;
-                    <?php echo $role_display; ?></p>
+                <p class="text-xs text-gray-500">Welcome,
+                    <?php echo htmlspecialchars($username); ?> &mdash;
+                    <?php echo $role_display; ?>
+                </p>
             </div>
 
             <div class="flex items-center gap-4">
@@ -101,7 +103,9 @@ $role_display = $is_superadmin ? 'Super Administrator' : 'Branch Administrator';
             </div>
 
             <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-                <h2 class="text-lg font-bold text-gray-800 mb-6">Performance Overview - <?php echo date('F Y'); ?></h2>
+                <h2 class="text-lg font-bold text-gray-800 mb-6">Performance Overview -
+                    <?php echo date('F Y'); ?>
+                </h2>
 
                 <div id="chart-container"
                     class="w-full h-96 flex items-center justify-center border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
