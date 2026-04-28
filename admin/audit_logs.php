@@ -56,76 +56,101 @@ try {
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="bg-gray-50 flex">
+<body class="bg-slate-50 flex">
 
     <?php require_once 'sidebar.php'; ?>
 
-    <div class="flex-1 ml-64 [.collapsed-sidebar_&]:ml-20 transition-all duration-300 min-h-screen flex flex-col">
+    <div
+        class="flex-1 ml-64 [.collapsed-sidebar_&]:ml-20 transition-all duration-300 min-h-screen flex flex-col relative z-0 overflow-hidden bg-slate-50/80">
 
-        <header class="bg-white shadow-sm border-b border-gray-200 h-16 flex items-center px-8 flex-shrink-0">
-            <h1 class="text-xl font-bold text-gray-800">System Audit Logs</h1>
+        <div
+            class="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-indigo-900/5 to-transparent -z-10 pointer-events-none">
+        </div>
+        <div
+            class="absolute -top-24 -right-24 w-96 h-96 bg-indigo-400/10 rounded-full blur-3xl -z-10 pointer-events-none">
+        </div>
+        <div class="absolute top-48 -left-24 w-72 h-72 bg-blue-400/10 rounded-full blur-3xl -z-10 pointer-events-none">
+        </div>
+
+        <header
+            class="bg-white/60 backdrop-blur-lg shadow-sm border-b border-slate-200/60 h-16 flex items-center px-8 sticky top-0 z-20 flex-shrink-0">
+            <h1 class="text-xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
+                <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                    </path>
+                </svg>
+                System Audit Logs
+            </h1>
         </header>
 
-        <main class="p-8 flex-1 overflow-hidden flex flex-col">
+        <main class="p-8 flex-1 overflow-hidden flex flex-col max-w-7xl mx-auto w-full">
 
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col flex-1 overflow-hidden">
+            <div
+                class="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 border-t-4 border-t-indigo-500 flex flex-col flex-1 overflow-hidden relative z-0">
 
-                <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-white flex-shrink-0">
+                <div
+                    class="p-6 border-b border-slate-100 flex justify-between items-center bg-white flex-shrink-0 relative z-10">
                     <div>
-                        <h2 class="text-lg font-bold text-gray-800">Recent Activity</h2>
-                        <p class="text-sm text-gray-500">Showing the latest 100 system events across all administrative
-                            accounts.</p>
+                        <h2 class="text-xl font-extrabold text-slate-800 tracking-tight">Recent Security Events</h2>
+                        <p class="text-sm text-slate-500 mt-1">Immutable ledger of the last 100 system events across all
+                            administrative accounts.</p>
+                    </div>
+                    <div
+                        class="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-indigo-100 shadow-sm">
+                        Live Tracking Active
                     </div>
                 </div>
 
-                <div class="overflow-y-auto flex-1 p-0">
+                <div class="overflow-y-auto flex-1 p-0 custom-scrollbar">
                     <table class="w-full text-left border-collapse">
-                        <thead class="bg-gray-50/50 sticky top-0 z-10 backdrop-blur-sm">
+                        <thead class="bg-slate-50/80 sticky top-0 z-10 backdrop-blur-md shadow-sm">
                             <tr>
                                 <th
-                                    class="py-3 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                                    class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
                                     Timestamp</th>
                                 <th
-                                    class="py-3 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                                    class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
                                     Administrator</th>
                                 <th
-                                    class="py-3 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">
-                                    Action Type</th>
+                                    class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                                    Event Type</th>
                                 <th
-                                    class="py-3 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                                    class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
                                     Details</th>
                                 <th
-                                    class="py-3 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 text-right">
+                                    class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 text-right">
                                     IP Address</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-100 bg-white">
+                        <tbody class="divide-y divide-slate-100 bg-white">
 
                             <?php if (empty($logs)): ?>
                                 <tr>
-                                    <td colspan="5" class="py-8 text-center text-gray-400 font-medium">No audit logs found.
-                                    </td>
+                                    <td colspan="5" class="py-12 text-center text-slate-400 font-medium">No system events
+                                        recorded yet.</td>
                                 </tr>
                             <?php else: ?>
                                 <?php foreach ($logs as $log): ?>
-                                    <tr class="hover:bg-gray-50 transition-colors">
+                                    <tr class="hover:bg-slate-50/50 transition-colors group">
 
-                                        <td class="py-4 px-6 text-sm text-gray-600 whitespace-nowrap">
-                                            <?php echo date('M d, Y h:i A', strtotime($log['created_at'])); ?>
+                                        <td class="py-4 px-6 text-sm text-slate-600 whitespace-nowrap font-medium">
+                                            <?php echo date('M d, Y', strtotime($log['created_at'])); ?> <br>
+                                            <span
+                                                class="text-xs text-slate-400 font-normal"><?php echo date('h:i A', strtotime($log['created_at'])); ?></span>
                                         </td>
 
                                         <td class="py-4 px-6">
-                                            <div class="flex items-center">
+                                            <div class="flex items-center gap-3">
                                                 <div
-                                                    class="w-8 h-8 rounded bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs mr-3">
+                                                    class="w-9 h-9 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 text-slate-600 flex items-center justify-center font-black text-sm border border-slate-200 shadow-sm group-hover:scale-105 transition-transform">
                                                     <?php echo strtoupper(substr($log['username'], 0, 1)); ?>
                                                 </div>
                                                 <div>
-                                                    <p class="text-sm font-bold text-gray-800">
-                                                        <?php echo htmlspecialchars($log['username']); ?>
-                                                    </p>
-                                                    <p class="text-xs text-gray-500">
-                                                        <?php echo $log['department_name'] ? htmlspecialchars($log['department_name']) : 'Super Admin'; ?>
+                                                    <p class="text-sm font-bold text-slate-800">
+                                                        <?php echo htmlspecialchars($log['username']); ?></p>
+                                                    <p class="text-xs text-slate-500 font-medium">
+                                                        <?php echo $log['department_name'] ? htmlspecialchars($log['department_name']) : 'Super Administrator'; ?>
                                                     </p>
                                                 </div>
                                             </div>
@@ -133,26 +158,26 @@ try {
 
                                         <td class="py-4 px-6">
                                             <?php
-                                            // Color-code the badges based on the action
-                                            $badge_color = 'bg-gray-100 text-gray-700';
+                                            $badge_color = 'bg-slate-100 text-slate-700 border-slate-200';
                                             if ($log['action_type'] == 'EXPORT_MASTER')
-                                                $badge_color = 'bg-green-100 text-green-700';
+                                                $badge_color = 'bg-emerald-50 text-emerald-700 border-emerald-200';
                                             if ($log['action_type'] == 'LOGIN')
-                                                $badge_color = 'bg-blue-100 text-blue-700';
+                                                $badge_color = 'bg-blue-50 text-blue-700 border-blue-200';
                                             if ($log['action_type'] == 'DELETE')
-                                                $badge_color = 'bg-red-100 text-red-700';
+                                                $badge_color = 'bg-red-50 text-red-700 border-red-200';
                                             ?>
-                                            <span class="px-3 py-1 rounded-full text-xs font-bold <?php echo $badge_color; ?>">
+                                            <span
+                                                class="px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider border shadow-sm <?php echo $badge_color; ?>">
                                                 <?php echo htmlspecialchars($log['action_type']); ?>
                                             </span>
                                         </td>
 
-                                        <td class="py-4 px-6 text-sm text-gray-700 max-w-md truncate"
+                                        <td class="py-4 px-6 text-sm text-slate-700 max-w-md truncate font-medium"
                                             title="<?php echo htmlspecialchars($log['action_details']); ?>">
                                             <?php echo htmlspecialchars($log['action_details']); ?>
                                         </td>
 
-                                        <td class="py-4 px-6 text-sm text-gray-400 font-mono text-right whitespace-nowrap">
+                                        <td class="py-4 px-6 text-sm text-slate-400 font-mono text-right whitespace-nowrap">
                                             <?php echo htmlspecialchars($log['ip_address']); ?>
                                         </td>
 
@@ -168,6 +193,27 @@ try {
 
         </main>
     </div>
+
+    <style>
+        /* Styling the table scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f8fafc;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
 
 </body>
 
