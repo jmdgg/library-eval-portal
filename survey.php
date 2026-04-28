@@ -97,11 +97,28 @@ $form_data = [
                 </div>
                 <div>
                     <label for="college" class="block text-sm font-semibold text-gray-700 mb-2">College</label>
-                    <input type="text" id="college" name="college" required class="w-full rounded-xl border-gray-200 border bg-gray-50 p-3.5 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-200" placeholder="e.g., College of Information Technology">
+                    <select id="college" name="college" required class="w-full rounded-xl border-gray-200 border bg-gray-50 p-3.5 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-200">
+                        <option value="" disabled selected>Select a College</option>
+                        <option value="Integrated School (IS)">Integrated School (IS)</option>
+                        <option value="College of Allied Medical Professions (CAMP)">College of Allied Medical Professions (CAMP)</option>
+                        <option value="College of Arts and Sciences (CAS)">College of Arts and Sciences (CAS)</option>
+                        <option value="College of Business and Accountancy (CBA)">College of Business and Accountancy (CBA)</option>
+                        <option value="College of Computer Studies (CCS)">College of Computer Studies (CCS)</option>
+                        <option value="College of Criminal Justice Education (CCJE)">College of Criminal Justice Education (CCJE)</option>
+                        <option value="College of Engineering and Architecture (CEA)">College of Engineering and Architecture (CEA)</option>
+                        <option value="College of Education (CED)">College of Education (CED)</option>
+                        <option value="College of Nursing (CON)">College of Nursing (CON)</option>
+                        <option value="School of Law (SOL)">School of Law (SOL)</option>
+                        <option value="School of Medicine (SOM)">School of Medicine (SOM)</option>
+                        <option value="Graduate School (GS)">Graduate School (GS)</option>
+                    </select>
                 </div>
                 <div>
                     <label for="department" class="block text-sm font-semibold text-gray-700 mb-2">Department</label>
-                    <input type="text" id="department" name="department" required class="w-full rounded-xl border-gray-200 border bg-gray-50 p-3.5 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-200" placeholder="e.g., Computer Science">
+                    <select id="department" name="department" required disabled class="w-full rounded-xl border-gray-200 border bg-gray-50 p-3.5 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-200">
+                        <option value="" disabled selected>Select a Department</option>
+                    </select>
+                    <input type="text" id="department_other" name="department_other" class="w-full mt-3 rounded-xl border-gray-200 border bg-gray-50 p-3.5 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-200" placeholder="Please specify your program..." style="display: none;">
                 </div>
             </div>
 
@@ -348,6 +365,60 @@ $form_data = [
         if(!dateInput.value) {
             dateInput.valueAsDate = new Date();
         }
+
+        // Cascading dropdown logic for College and Department
+        const collegeData = {
+            "Integrated School (IS)": ["Pre-Kinder", "Kindergarten", "Grade School", "Junior High School", "Senior High School"],
+            "College of Allied Medical Professions (CAMP)": ["BS Medical Technology", "BS Occupational Therapy", "BS Pharmacy", "BS Clinical Pharmacy", "BS Radiologic Technology", "BS Physical Therapy", "BS Physical Therapy Professional Enhancement Program"],
+            "College of Arts and Sciences (CAS)": ["AB Communication", "BS Biology", "BS Biology Three-Year Accelerated Program", "BS Psychology", "AB Psychology", "BS in Human Biology", "Straight AB Psychology - MA Psychology Program"],
+            "College of Business and Accountancy (CBA)": ["BS Accountancy", "BS Management Accounting", "BS Business Administration", "BS Hospitality Management", "BS Tourism Management"],
+            "College of Computer Studies (CCS)": ["Bachelor of Multimedia Arts", "BS Computer Science", "BS Information Technology"],
+            "College of Criminal Justice Education (CCJE)": ["BS Criminology"],
+            "College of Engineering and Architecture (CEA)": ["BS Architecture", "BS Civil Engineering", "BS Computer Engineering", "BS Electronics Engineering"],
+            "College of Education (CED)": ["Bachelor of Elementary Education", "Bachelor of Secondary Education", "Bachelor of Early Childhood Education", "Bachelor of Special Needs Education", "Professional Certificate Course in Teaching"],
+            "College of Nursing (CON)": ["BS Nursing"],
+            "School of Law (SOL)": ["Juris Doctor", "Other"],
+            "School of Medicine (SOM)": ["Doctor of Medicine", "Other"],
+            "Graduate School (GS)": ["Education Programs", "Psychology Program", "Business Programs", "Information Technology Programs", "Public Health Programs", "Medical Laboratory Science Programs", "Nursing Programs", "Criminal Justice Program", "Other"]
+        };
+
+        const collegeSelect = document.getElementById('college');
+        const departmentSelect = document.getElementById('department');
+        const departmentOtherInput = document.getElementById('department_other');
+
+        collegeSelect.addEventListener('change', function() {
+            const selectedCollege = this.value;
+            
+            departmentSelect.innerHTML = '<option value="" disabled selected>Select a Department</option>';
+            
+            departmentOtherInput.style.display = 'none';
+            departmentOtherInput.value = '';
+            departmentOtherInput.removeAttribute('required');
+
+            if (selectedCollege && collegeData[selectedCollege]) {
+                departmentSelect.removeAttribute('disabled');
+                
+                collegeData[selectedCollege].forEach(function(dept) {
+                    const option = document.createElement('option');
+                    option.value = dept;
+                    option.textContent = dept;
+                    departmentSelect.appendChild(option);
+                });
+            } else {
+                departmentSelect.setAttribute('disabled', 'disabled');
+            }
+        });
+
+        departmentSelect.addEventListener('change', function() {
+            if (this.value === 'Other') {
+                departmentOtherInput.style.display = 'block';
+                departmentOtherInput.setAttribute('required', 'required');
+            } else {
+                departmentOtherInput.style.display = 'none';
+                departmentOtherInput.value = '';
+                departmentOtherInput.removeAttribute('required');
+            }
+        });
     });
 </script>
 
