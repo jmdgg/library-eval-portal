@@ -1,7 +1,7 @@
 <?php
 /**
  * dashboard.php
- * Landing page and high-level KPIs.
+ * Landing page and high-level KPIs with Premium UI Polish.
  */
 session_start();
 require_once '../db_connect.php';
@@ -36,7 +36,7 @@ try {
     $pendingFlags = $stmt->fetchColumn() ?: 0;
 
     // Recent Submissions
-    $stmt = $pdo->query("SELECT submission_id, submission_date, role, college, respondent_name, department FROM survey_submission ORDER BY submission_date DESC, submission_id DESC LIMIT 50");
+    $stmt = $pdo->query("SELECT submission_id, submission_date, role, college, respondent_name, department, overall_rating FROM survey_submission ORDER BY submission_date DESC, submission_id DESC LIMIT 50");
     $recentSubmissions = $stmt->fetchAll();
 
     // Demographics
@@ -86,8 +86,19 @@ try {
             theme: {
                 extend: {
                     colors: {
-                        'auf-slate': '#6B7A8F',
-                        'auf-apricot': '#F7882F',
+                        slate: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            200: '#e2e8f0',
+                            300: '#cbd5e1',
+                            400: '#94a3b8',
+                            500: '#64748b',
+                            600: '#475569',
+                            700: '#334155',
+                            800: '#1e293b',
+                            900: '#0f172a',
+                        },
+                        apricot: '#F7882F',
                         offwhite: '#FAFAFA',
                         purewhite: '#FFFFFF'
                     }
@@ -97,56 +108,75 @@ try {
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
         body {
-            background-color: #FAFAFA;
-            color: #6B7A8F;
+            background-color: #e2e8f0;
+            color: #334155;
             font-family: 'Inter', sans-serif;
-        }
-
-        h1, h2, h3, h4, h5, h6 {
-            color: #6B7A8F;
-        }
-
-        .card {
-            background-color: #FFFFFF;
-            border-radius: 0.75rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-            padding: 1.5rem;
         }
 
         .btn-apricot {
             background-color: #F7882F;
             color: #FFFFFF;
-            transition: background-color 0.2s ease-in-out;
+            transition: all 0.2s ease-in-out;
         }
 
         .btn-apricot:hover {
             background-color: #e07725;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(247, 136, 47, 0.2);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
         }
     </style>
 </head>
 
-<body class="min-h-screen bg-offwhite flex overflow-x-hidden">
+<body class="min-h-screen bg-slate-200 flex overflow-x-hidden">
 
     <?php require_once 'sidebar.php'; ?>
 
     <!-- Main Wrapper for Responsiveness -->
-    <div class="flex-1 ml-64 [.collapsed-sidebar_&]:ml-20 transition-all duration-300 min-h-screen flex flex-col">
+    <div
+        class="flex-1 ml-64 [.collapsed-sidebar_&]:ml-20 transition-all duration-300 min-h-screen flex flex-col relative z-0">
 
-        <!-- Original Navigation Styled as Header -->
-        <header class="bg-purewhite shadow-sm border-b border-gray-200 px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4 sticky top-0 z-20">
-            <div>
-                <h1 class="text-xl font-bold">Library Evaluation Analytics</h1>
-                <p class="text-sm">Welcome back, <?php echo htmlspecialchars($username); ?> &mdash;
-                    <?php echo $role_display; ?>
-                </p>
+        <!-- Consolidated Glassmorphic Header -->
+        <header
+            class="bg-white/60 backdrop-blur-lg shadow-sm border-b border-slate-200/60 h-20 flex items-center justify-between px-8 sticky top-0 z-30 flex-shrink-0">
+            <div class="flex flex-col">
+                <h1 class="text-xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z">
+                        </path>
+                    </svg>
+                    Dashboard Overview
+                </h1>
+                <p class="text-sm text-slate-500 font-medium">Welcome back, <?php echo htmlspecialchars($username); ?>
+                    &mdash; <?php echo $role_display; ?></p>
             </div>
 
             <div class="flex items-center gap-4">
                 <form id="exportForm" action="generate_excel.php" method="GET" onsubmit="return validateDateRange()"
-                    class="flex items-center gap-2 bg-offwhite p-2 rounded-lg border border-gray-200 flex-wrap justify-center">
+                    class="flex items-center gap-2 bg-white/40 p-2 rounded-xl border border-slate-200/60 shadow-sm">
                     <select name="start_month" id="start_month"
-                        class="text-sm border-gray-300 rounded-md shadow-sm p-1.5 text-auf-slate">
+                        class="text-xs border-slate-200 rounded-lg shadow-sm py-1.5 px-3 bg-white/50 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
                         <?php
                         $months = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
                         $currentMonth = strtoupper(date('F'));
@@ -157,12 +187,13 @@ try {
                         ?>
                     </select>
                     <input type="number" name="start_year" id="start_year" value="<?php echo date('Y'); ?>"
-                        class="text-sm w-20 border-gray-300 rounded-md shadow-sm p-1.5 text-auf-slate" required>
+                        class="text-xs w-20 border-slate-200 rounded-lg shadow-sm py-1.5 px-3 bg-white/50 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                        required>
 
-                    <span class="text-sm font-bold text-auf-slate px-1">TO</span>
+                    <span class="text-xs font-bold text-slate-400 px-1">TO</span>
 
                     <select name="end_month" id="end_month"
-                        class="text-sm border-gray-300 rounded-md shadow-sm p-1.5 text-auf-slate">
+                        class="text-xs border-slate-200 rounded-lg shadow-sm py-1.5 px-3 bg-white/50 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
                         <?php
                         foreach ($months as $m) {
                             $selected = ($m == $currentMonth) ? 'selected' : '';
@@ -171,161 +202,311 @@ try {
                         ?>
                     </select>
                     <input type="number" name="end_year" id="end_year" value="<?php echo date('Y'); ?>"
-                        class="text-sm w-20 border-gray-300 rounded-md shadow-sm p-1.5 text-auf-slate" required>
+                        class="text-xs w-20 border-slate-200 rounded-lg shadow-sm py-1.5 px-3 bg-white/50 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                        required>
 
-                    <button type="submit" class="btn-apricot px-4 py-2 rounded-md text-sm font-semibold shadow-sm ml-2">
-                        Export to Master Template
+                    <button type="submit" class="btn-apricot px-5 py-2 rounded-lg text-xs font-bold shadow-sm ml-2">
+                        Export Report (.xlsx)
                     </button>
                 </form>
             </div>
         </header>
 
-        <main class="max-w-7xl mx-auto p-6 space-y-6 w-full">
-
-            <h2 class="text-2xl font-bold mb-2 text-auf-slate">Performance Overview - <?php echo date('F Y'); ?></h2>
+        <main class="max-w-7xl mx-auto p-8 space-y-8 w-full flex-1">
 
             <!-- 1. KPI 'Glance Cards' Row -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div class="card flex flex-col justify-center">
-                    <p class="text-sm font-semibold uppercase opacity-80 mb-1">Total Evaluations</p>
-                    <p class="text-3xl font-bold text-auf-slate"><?php echo htmlspecialchars($totalEvaluations); ?></p>
+                <!-- Total Evaluations -->
+                <div
+                    class="bg-white rounded-2xl p-6 shadow-[0_2px_10px_rgb(0,0,0,0.02)] border border-slate-100 flex items-center gap-5 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-shadow">
+                    <div
+                        class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                            </path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Total Evaluations
+                        </p>
+                        <p class="text-2xl font-extrabold text-slate-800">
+                            <?php echo htmlspecialchars($totalEvaluations); ?></p>
+                    </div>
                 </div>
-                <div class="card flex flex-col justify-center">
-                    <p class="text-sm font-semibold uppercase opacity-80 mb-1">Overall Satisfaction</p>
-                    <p class="text-3xl font-bold text-auf-slate"><?php echo number_format((float) $avgScore, 1); ?> / 5.0</p>
+
+                <!-- Overall Satisfaction -->
+                <div
+                    class="bg-white rounded-2xl p-6 shadow-[0_2px_10px_rgb(0,0,0,0.02)] border border-slate-100 flex items-center gap-5 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-shadow">
+                    <div
+                        class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                            </path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Overall Satisfaction
+                        </p>
+                        <p class="text-2xl font-extrabold text-slate-800">
+                            <?php echo number_format((float) $avgScore, 1); ?> <span
+                                class="text-sm font-medium text-slate-400">/ 5.0</span></p>
+                    </div>
                 </div>
+
+                <!-- Most Active College -->
                 <div id="kpiMostActive"
-                    class="card flex flex-col justify-center cursor-pointer hover:bg-gray-50 transition-colors">
-                    <p class="text-sm font-semibold uppercase opacity-80 mb-1">Most Active College</p>
-                    <p class="text-3xl font-bold truncate text-auf-slate" title="<?php echo htmlspecialchars($mostActiveCollege); ?>">
-                        <?php echo htmlspecialchars($mostActiveCollege); ?>
-                    </p>
+                    class="bg-white rounded-2xl p-6 shadow-[0_2px_10px_rgb(0,0,0,0.02)] border border-slate-100 flex items-center gap-5 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-shadow cursor-pointer">
+                    <div
+                        class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4">
+                            </path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Most Active College
+                        </p>
+                        <p class="text-lg font-extrabold text-slate-800 truncate w-32"
+                            title="<?php echo htmlspecialchars($mostActiveCollege); ?>">
+                            <?php echo htmlspecialchars($mostActiveCollege); ?>
+                        </p>
+                    </div>
                 </div>
-                <div class="card flex flex-col justify-center">
-                    <p class="text-sm font-semibold uppercase opacity-80 mb-1">Pending Flags/Reviews</p>
-                    <p class="text-3xl font-bold text-auf-slate"><?php echo htmlspecialchars($pendingFlags); ?></p>
+
+                <!-- Pending Flags/Reviews -->
+                <div
+                    class="bg-white rounded-2xl p-6 shadow-[0_2px_10px_rgb(0,0,0,0.02)] border border-slate-100 flex items-center gap-5 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-shadow">
+                    <div
+                        class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                            </path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Pending Flags</p>
+                        <p class="text-2xl font-extrabold text-slate-800"><?php echo htmlspecialchars($pendingFlags); ?>
+                        </p>
+                    </div>
                 </div>
             </div>
 
             <!-- 2. The Main Analytics Grid -->
-            <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                <!-- Left Column (approx 60% -> 3/5 cols) -->
-                <div class="card lg:col-span-3">
-                    <h3 class="text-lg font-bold mb-4">30-Day Trend</h3>
-                    <div class="w-full h-64 md:h-80 relative">
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                <!-- Left Column (Performance Trend) -->
+                <div
+                    class="bg-white p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 border-t-4 border-t-blue-500 relative overflow-hidden group lg:col-span-3 flex flex-col">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-extrabold text-slate-800 tracking-tight">Performance Trend</h3>
+                        <div
+                            class="bg-blue-50 text-blue-600 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider">
+                            Last 12 Months</div>
+                    </div>
+                    <div class="w-full h-80 relative flex-1">
                         <canvas id="trendChart"></canvas>
                     </div>
                 </div>
-                <!-- Right Column (approx 40% -> 2/5 cols) -->
-                <div class="card lg:col-span-2">
-                    <h3 class="text-lg font-bold mb-4">Demographics</h3>
-                    <div class="w-full h-64 md:h-80 relative">
+
+                <!-- Right Column (Demographics) -->
+                <div
+                    class="bg-white p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 border-t-4 border-t-indigo-500 relative overflow-hidden group lg:col-span-2 flex flex-col">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-extrabold text-slate-800 tracking-tight">Demographics</h3>
+                        <div
+                            class="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider">
+                            User Distribution</div>
+                    </div>
+                    <div class="w-full h-80 relative flex-1">
                         <canvas id="demoChart"></canvas>
                     </div>
                 </div>
             </div>
 
             <!-- 3. Recent Activity Table -->
-            <div class="card overflow-x-auto">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-bold">Recent Submissions</h3>
-                    <button id="openSubmissionsModal" class="btn-apricot px-3 py-1 rounded-md text-sm font-semibold shadow-sm">Expand</button>
+            <div
+                class="bg-white p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 border-t-4 border-t-emerald-500 relative overflow-hidden group flex flex-col">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h3 class="text-lg font-extrabold text-slate-800 tracking-tight">Recent Submissions</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">High-level view of latest library evaluations.</p>
+                    </div>
+                    <button id="openSubmissionsModal"
+                        class="btn-apricot px-4 py-2 rounded-lg text-xs font-bold shadow-sm">View Full Vault</button>
                 </div>
-                <table class="w-full text-left border-collapse min-w-[600px]">
-                    <thead>
-                        <tr class="border-b border-gray-200">
-                            <th class="py-3 px-4 font-semibold text-sm">Date</th>
-                            <th class="py-3 px-4 font-semibold text-sm">Name</th>
-                            <th class="py-3 px-4 font-semibold text-sm">College</th>
-                            <th class="py-3 px-4 font-semibold text-sm">User Type</th>
-                            <th class="py-3 px-4 font-semibold text-sm">Library Dept.</th>
-                            <th class="py-3 px-4 font-semibold text-sm text-right">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody class="text-sm">
-                        <?php if (!empty($recentSubmissions)): ?>
-                            <?php foreach (array_slice($recentSubmissions, 0, 5) as $sub): ?>
-                            <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                                <td class="py-3 px-4 text-slate"><?php echo date('Y-m-d', strtotime($sub['submission_date'])); ?></td>
-                                <td class="py-3 px-4 text-slate"><?php echo htmlspecialchars($sub['respondent_name'] ?: 'Anonymous'); ?></td>
-                                <td class="py-3 px-4 text-slate"><?php echo htmlspecialchars($sub['college']); ?></td>
-                                <td class="py-3 px-4 text-slate"><?php echo htmlspecialchars($sub['role']); ?></td>
-                                <td class="py-3 px-4 text-slate"><?php echo htmlspecialchars($sub['department']); ?></td>
-                                <td class="py-3 px-4 text-right">
-                                    <button class="text-slate hover:text-apricot font-medium transition-colors">View</button>
-                                </td>
+
+                <div class="overflow-x-auto custom-scrollbar border border-slate-100 rounded-xl">
+                    <table class="w-full text-left border-collapse min-w-[800px]">
+                        <thead class="bg-slate-50 border-b border-slate-200">
+                            <tr>
+                                <th class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">Date
+                                </th>
+                                <th class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                    Respondent</th>
+                                <th
+                                    class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">
+                                    Satisfied?</th>
+                                <th class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">College
+                                </th>
+                                <th class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">User
+                                    Type</th>
+                                <th
+                                    class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">
+                                    Action</th>
                             </tr>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <!-- Fallback Dummy Data if DB is empty for UI preservation -->
-                            <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                                <td class="py-3 px-4">2026-04-28</td><td class="py-3 px-4">John Doe</td><td class="py-3 px-4">CCS</td><td class="py-3 px-4">Student</td><td class="py-3 px-4">Circulation</td><td class="py-3 px-4 text-right"><button class="text-slate hover:text-apricot font-medium transition-colors">View</button></td>
-                            </tr>
-                            <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                                <td class="py-3 px-4">2026-04-27</td><td class="py-3 px-4">Jane Smith</td><td class="py-3 px-4">CBA</td><td class="py-3 px-4">Faculty</td><td class="py-3 px-4">Reference</td><td class="py-3 px-4 text-right"><button class="text-slate hover:text-apricot font-medium transition-colors">View</button></td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody class="text-sm divide-y divide-slate-50 bg-white">
+                            <?php if (!empty($recentSubmissions)): ?>
+                                <?php foreach (array_slice($recentSubmissions, 0, 10) as $sub): ?>
+                                    <tr class="hover:bg-slate-50/50 transition-colors group">
+                                        <td class="py-4 px-6 text-slate-600 font-medium">
+                                            <?php echo date('M d, Y', strtotime($sub['submission_date'])); ?></td>
+                                        <td class="py-4 px-6">
+                                            <div class="flex items-center gap-3">
+                                                <div
+                                                    class="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center font-bold text-xs uppercase">
+                                                    <?php echo strtoupper(substr($sub['respondent_name'] ?: 'A', 0, 1)); ?>
+                                                </div>
+                                                <span
+                                                    class="font-bold text-slate-800"><?php echo htmlspecialchars($sub['respondent_name'] ?: 'Anonymous'); ?></span>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-6 text-center">
+                                            <?php
+                                            $rating = $sub['overall_rating'] ?? 'Fair';
+                                            $dot_color = 'bg-slate-400';
+                                            if (in_array($rating, ['Excellent', 'Very Satisfactory', 'Satisfactory']))
+                                                $dot_color = 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]';
+                                            if (in_array($rating, ['Fair', 'Needs Improvement']))
+                                                $dot_color = 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.4)]';
+                                            ?>
+                                            <div class="flex items-center justify-center gap-2">
+                                                <span class="w-2 h-2 rounded-full <?php echo $dot_color; ?>"></span>
+                                                <span
+                                                    class="text-[10px] font-bold uppercase tracking-tight text-slate-500"><?php echo $rating; ?></span>
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-6">
+                                            <span
+                                                class="bg-slate-100 text-slate-600 px-2 py-1 rounded-md text-[10px] font-bold"><?php echo htmlspecialchars($sub['college']); ?></span>
+                                        </td>
+                                        <td class="py-4 px-6 text-slate-500 font-medium">
+                                            <?php echo htmlspecialchars($sub['role']); ?></td>
+                                        <td class="py-4 px-6 text-right">
+                                            <button
+                                                class="text-blue-600 hover:text-blue-800 font-bold text-xs uppercase tracking-wider transition-colors">Details</button>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="6" class="py-12 text-center text-slate-400 font-medium italic">No recent
+                                        evaluation records found.</td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
         </main>
     </div>
 
-    <!-- Expanded Submissions Modal -->
+    <!-- Expanded Submissions Modal (Enhanced) -->
     <div id="submissionsModal"
-        class="fixed inset-0 z-50 hidden bg-black bg-opacity-50 flex items-center justify-center">
-        <div class="bg-white rounded-lg shadow-xl w-11/12 max-w-6xl max-h-[90vh] flex flex-col">
-            <div class="flex justify-between items-center p-4 border-b border-gray-200">
-                <h3 class="text-lg font-bold text-slate">All Recent Submissions</h3>
-                <button id="closeSubmissionsModalBtn" class="text-gray-400 hover:text-gray-600 focus:outline-none">
+        class="fixed inset-0 z-[60] hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div
+            class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-100">
+            <div class="flex justify-between items-center p-6 border-b border-slate-100 bg-slate-50/50">
+                <div>
+                    <h3 class="text-xl font-extrabold text-slate-800 tracking-tight">Global Submissions Vault</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Explore and filter the complete collection of evaluation
+                        data.</p>
+                </div>
+                <button id="closeSubmissionsModalBtn"
+                    class="text-slate-400 hover:text-slate-600 transition-colors p-2 hover:bg-slate-100 rounded-xl">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
                     </svg>
                 </button>
             </div>
-            <div class="p-6 overflow-y-auto flex-grow flex flex-col gap-4">
+
+            <div class="p-6 flex flex-col gap-6 overflow-hidden">
                 <div class="flex flex-col md:flex-row gap-4">
-                    <div class="flex-grow">
+                    <div class="flex-grow relative group">
+                        <div
+                            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-500 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
                         <input type="text" id="advancedSearch"
-                            class="form-control w-full border border-gray-300 rounded-md p-2 text-sm shadow-sm outline-none focus:border-apricot focus:ring-1 focus:ring-apricot transition-colors"
-                            placeholder="Search evaluations... (e.g., college:ccs type:student smith)">
-                        <p class="text-xs text-slate opacity-80 mt-1">Pro tip: Use filters like college:, dept:, type:, or rating:</p>
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium"
+                            placeholder="Try 'college:ccs student' or 'smith'...">
                     </div>
-                    <div class="flex gap-4">
-                        <select id="filterCollege" class="form-select border border-gray-300 rounded-md p-2 text-sm shadow-sm outline-none focus:border-apricot focus:ring-1 focus:ring-apricot transition-colors bg-white h-fit">
+                    <div class="flex gap-2">
+                        <select id="filterCollege"
+                            class="bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold text-slate-700 shadow-sm outline-none focus:border-blue-500 transition-colors">
                             <option value="All Colleges">All Colleges</option>
-                            <option value="CAMP">CAMP</option><option value="CAS">CAS</option><option value="CBA">CBA</option><option value="CCS">CCS</option><option value="CCJE">CCJE</option><option value="CEA">CEA</option><option value="CED">CED</option><option value="CON">CON</option><option value="SOL">SOL</option><option value="SOM">SOM</option><option value="GS">GS</option><option value="IS">IS</option><option value="N/A">N/A</option>
+                            <?php
+                            $colleges = ["CAMP", "CAS", "CBA", "CCS", "CCJE", "CEA", "CED", "CON", "SOL", "SOM", "GS", "IS", "N/A"];
+                            foreach ($colleges as $c)
+                                echo "<option value=\"$c\">$c</option>";
+                            ?>
                         </select>
-                        <select id="filterUserType" class="form-select border border-gray-300 rounded-md p-2 text-sm shadow-sm outline-none focus:border-apricot focus:ring-1 focus:ring-apricot transition-colors bg-white h-fit">
+                        <select id="filterUserType"
+                            class="bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold text-slate-700 shadow-sm outline-none focus:border-blue-500 transition-colors">
                             <option value="All User Types">All User Types</option>
-                            <option value="Student">Student</option><option value="Faculty">Faculty</option><option value="Alumni">Alumni</option><option value="NTP">NTP</option><option value="Other Researcher">Other Researcher</option>
+                            <option value="Student">Student</option>
+                            <option value="Faculty">Faculty</option>
+                            <option value="Alumni">Alumni</option>
+                            <option value="NTP">NTP</option>
                         </select>
                     </div>
                 </div>
 
-                <div class="overflow-x-auto border border-gray-200 rounded-lg">
-                    <table class="w-full text-left border-collapse min-w-[600px]" id="expandedSubmissionsTable">
-                        <thead class="bg-gray-50">
-                            <tr class="border-b border-gray-200">
-                                <th class="py-3 px-4 font-semibold text-sm">Date</th>
-                                <th class="py-3 px-4 font-semibold text-sm">Name</th>
-                                <th class="py-3 px-4 font-semibold text-sm">College</th>
-                                <th class="py-3 px-4 font-semibold text-sm">User Type</th>
-                                <th class="py-3 px-4 font-semibold text-sm">Library Dept.</th>
-                                <th class="py-3 px-4 font-semibold text-sm text-right">Action</th>
+                <div class="overflow-y-auto flex-1 custom-scrollbar border border-slate-100 rounded-xl shadow-inner">
+                    <table class="w-full text-left border-collapse" id="expandedSubmissionsTable">
+                        <thead class="sticky top-0 bg-slate-50 z-10 border-b border-slate-200">
+                            <tr>
+                                <th class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">Date
+                                </th>
+                                <th class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                    Respondent</th>
+                                <th class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">College
+                                </th>
+                                <th class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">User
+                                    Type</th>
+                                <th class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">Dept.
+                                </th>
+                                <th
+                                    class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">
+                                    Action</th>
                             </tr>
                         </thead>
-                        <tbody class="text-sm">
+                        <tbody class="text-sm divide-y divide-slate-50">
                             <?php foreach ($recentSubmissions as $sub): ?>
-                            <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                                <td class="py-3 px-4"><?php echo date('Y-m-d', strtotime($sub['submission_date'])); ?></td>
-                                <td class="py-3 px-4"><?php echo htmlspecialchars($sub['respondent_name'] ?: 'Anonymous'); ?></td>
-                                <td class="py-3 px-4"><?php echo htmlspecialchars($sub['college']); ?></td>
-                                <td class="py-3 px-4"><?php echo htmlspecialchars($sub['role']); ?></td>
-                                <td class="py-3 px-4"><?php echo htmlspecialchars($sub['department']); ?></td>
-                                <td class="py-3 px-4 text-right"><button class="text-auf-slate hover:text-auf-apricot font-medium transition-colors">View</button></td>
-                            </tr>
+                                <tr class="hover:bg-slate-50/50 transition-colors">
+                                    <td class="py-4 px-6 text-slate-500 font-medium"><?php echo $sub['submission_date']; ?>
+                                    </td>
+                                    <td class="py-4 px-6 font-bold text-slate-800">
+                                        <?php echo htmlspecialchars($sub['respondent_name'] ?: 'Anonymous'); ?></td>
+                                    <td class="py-4 px-6 font-bold text-blue-600">
+                                        <?php echo htmlspecialchars($sub['college']); ?></td>
+                                    <td class="py-4 px-6 font-medium text-slate-500">
+                                        <?php echo htmlspecialchars($sub['role']); ?></td>
+                                    <td class="py-4 px-6 font-medium text-slate-500">
+                                        <?php echo htmlspecialchars($sub['department']); ?></td>
+                                    <td class="py-4 px-6 text-right">
+                                        <button
+                                            class="text-blue-600 hover:text-blue-800 font-bold text-xs uppercase tracking-wider transition-colors">View</button>
+                                    </td>
+                                </tr>
                             <?php endforeach; ?>
                         </tbody>
                     </table>
@@ -334,20 +515,22 @@ try {
         </div>
     </div>
 
-    <!-- Leaderboard Modal -->
+    <!-- Leaderboard Modal (Enhanced) -->
     <div id="leaderboardModal"
-        class="fixed inset-0 z-50 hidden bg-black bg-opacity-50 flex items-center justify-center">
-        <div class="bg-white rounded-lg shadow-xl w-11/12 md:w-1/2 lg:w-1/3 max-h-[80vh] flex flex-col">
-            <div class="flex justify-between items-center p-4 border-b border-gray-200">
-                <h3 class="text-lg font-bold text-auf-slate">College Activity</h3>
-                <button id="closeLeaderboardBtn" class="text-gray-400 hover:text-gray-600 focus:outline-none">
+        class="fixed inset-0 z-[60] hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div
+            class="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-slate-100 flex flex-col overflow-hidden">
+            <div class="flex justify-between items-center p-6 border-b border-slate-100 bg-slate-50/50">
+                <h3 class="text-xl font-extrabold text-slate-800 tracking-tight">College Activity</h3>
+                <button id="closeLeaderboardBtn" class="text-slate-400 hover:text-slate-600 transition-colors">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
                     </svg>
                 </button>
             </div>
-            <div class="p-4 overflow-y-auto flex-grow space-y-2" id="leaderboardContent">
-                <!-- Data injected here -->
+            <div class="p-6 overflow-y-auto max-h-[60vh] space-y-3" id="leaderboardContent">
+                <!-- Data injected via JS -->
             </div>
         </div>
     </div>
@@ -387,17 +570,26 @@ try {
                     datasets: [{
                         label: 'Evaluations',
                         data: <?php echo json_encode($trendCounts); ?>,
-                        borderColor: '#6B7A8F',
-                        backgroundColor: 'rgba(107, 122, 143, 0.1)',
-                        borderWidth: 2,
-                        tension: 0.3,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.05)',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#3b82f6',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        tension: 0.4,
                         fill: true
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } }
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
+                        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                    }
                 }
             });
 
@@ -408,74 +600,44 @@ try {
                     labels: <?php echo json_encode($rolesLabels); ?>,
                     datasets: [{
                         data: <?php echo json_encode($rolesCounts); ?>,
-                        backgroundColor: ['#6B7A8F', '#F7882F', '#D1D5DB', '#4CAF50', '#9C27B0', '#03A9F4', '#FFC107', '#E91E63'],
-                        borderWidth: 0
+                        backgroundColor: ['#6366f1', '#f59e0b', '#10b981', '#ec4899', '#8b5cf6', '#64748b'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff',
+                        hoverOffset: 10
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom' } }
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 10, padding: 15, font: { size: 11, weight: 'bold' } } }
+                    },
+                    cutout: '75%'
                 }
             });
         });
 
-        // Advanced Search and Modal Logic
-        const collegeAliases = {
-            "camp": "college of allied medical professions", "cas": "college of arts and sciences",
-            "cba": "college of business and accountancy", "ccs": "college of computer studies",
-            "ccje": "college of criminal justice education", "cea": "college of engineering",
-            "ced": "college of education", "con": "college of nursing",
-            "sol": "school of law", "som": "school of medicine",
-            "gs": "graduate school", "is": "integrated school"
-        };
-
-        function checkMatch(text, term) {
-            if (text.includes(term)) return true;
-            if (collegeAliases[term] && text.includes(collegeAliases[term])) return true;
-            return false;
-        }
-
-        function parseSearchQuery(input) {
-            const tokens = input.trim().split(/\s+/);
-            const filters = { tokens: {}, freeText: [] };
-            tokens.forEach(token => {
-                if (token.includes(':')) {
-                    const parts = token.split(':');
-                    filters.tokens[parts[0].toLowerCase()] = parts.slice(1).join(':').toLowerCase();
-                } else if (token) {
-                    filters.freeText.push(token.toLowerCase());
-                }
-            });
-            return filters;
-        }
-
+        // Search and Modal Handlers
         const advancedSearch = document.getElementById('advancedSearch');
         const filterCollege = document.getElementById('filterCollege');
         const filterUserType = document.getElementById('filterUserType');
 
         function applyFilters() {
-            const searchQuery = advancedSearch.value;
-            const filters = parseSearchQuery(searchQuery);
+            const searchQuery = advancedSearch.value.toLowerCase();
             const collegeVal = filterCollege.value.toLowerCase();
             const userTypeVal = filterUserType.value.toLowerCase();
 
             const rows = document.querySelectorAll('#expandedSubmissionsTable tbody tr');
             rows.forEach(row => {
-                const rowText = row.textContent.toLowerCase();
-                const rowCollege = row.cells[2].textContent.trim().toLowerCase();
-                const rowType = row.cells[3].textContent.trim().toLowerCase();
+                const text = row.textContent.toLowerCase();
+                const college = row.cells[2].textContent.trim().toLowerCase();
+                const type = row.cells[3].textContent.trim().toLowerCase();
 
-                let isMatch = true;
-                if (collegeVal !== 'all colleges' && !checkMatch(rowCollege, collegeVal)) isMatch = false;
-                if (isMatch && userTypeVal !== 'all user types' && rowType !== userTypeVal) isMatch = false;
-                
-                if (isMatch) {
-                    filters.freeText.forEach(text => {
-                        if (!rowText.includes(text)) isMatch = false;
-                    });
-                }
-                row.style.display = isMatch ? '' : 'none';
+                let match = text.includes(searchQuery);
+                if (collegeVal !== 'all colleges' && college !== collegeVal) match = false;
+                if (userTypeVal !== 'all user types' && type !== userTypeVal) match = false;
+
+                row.style.display = match ? '' : 'none';
             });
         }
 
@@ -483,40 +645,34 @@ try {
         filterCollege.addEventListener('change', applyFilters);
         filterUserType.addEventListener('change', applyFilters);
 
-        // Modal Handlers
-        const openSubModal = document.getElementById('openSubmissionsModal');
-        const closeSubModal = document.getElementById('closeSubmissionsModalBtn');
         const subModal = document.getElementById('submissionsModal');
+        document.getElementById('openSubmissionsModal').onclick = () => subModal.classList.remove('hidden');
+        document.getElementById('closeSubmissionsModalBtn').onclick = () => subModal.classList.add('hidden');
 
-        openSubModal.onclick = () => subModal.classList.remove('hidden');
-        closeSubModal.onclick = () => subModal.classList.add('hidden');
-
-        const kpiActive = document.getElementById('kpiMostActive');
         const leadModal = document.getElementById('leaderboardModal');
-        const closeLeadBtn = document.getElementById('closeLeaderboardBtn');
         const leadContent = document.getElementById('leaderboardContent');
-
-        kpiActive.onclick = () => {
+        document.getElementById('kpiMostActive').onclick = () => {
             const tally = {};
             document.querySelectorAll('#expandedSubmissionsTable tbody tr').forEach(row => {
                 const college = row.cells[2].textContent.trim();
                 if (college) tally[college] = (tally[college] || 0) + 1;
             });
-            const sorted = Object.entries(tally).sort((a,b) => b[1]-a[1]);
+            const sorted = Object.entries(tally).sort((a, b) => b[1] - a[1]);
             leadContent.innerHTML = sorted.map(([c, n]) => `
-                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-md border border-gray-100">
-                    <span class="font-bold text-auf-slate">${c}</span>
-                    <span class="text-sm font-semibold bg-apricot text-white px-3 py-1 rounded-full">${n} eval${n!==1?'s':''}</span>
+                <div class="flex justify-between items-center p-4 bg-slate-50 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all">
+                    <span class="font-bold text-slate-800">${c}</span>
+                    <span class="bg-blue-50 text-blue-600 text-[10px] font-bold px-3 py-1 rounded-full border border-blue-100">${n} Evaluations</span>
                 </div>
-            `).join('') || '<p class="text-center text-gray-500 py-4">No data available.</p>';
+            `).join('') || '<p class="text-center text-slate-400 py-6">No data available.</p>';
             leadModal.classList.remove('hidden');
         };
 
-        closeLeadBtn.onclick = () => leadModal.classList.add('hidden');
+        document.getElementById('closeLeaderboardBtn').onclick = () => leadModal.classList.add('hidden');
         window.onclick = (e) => {
             if (e.target === subModal) subModal.classList.add('hidden');
             if (e.target === leadModal) leadModal.classList.add('hidden');
         };
     </script>
 </body>
+
 </html>
