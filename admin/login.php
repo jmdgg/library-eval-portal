@@ -133,12 +133,13 @@ if (empty($_SESSION['csrf_token'])) {
 
         /* Minimal illustration wrapper */
         .illus-wrap {
-            width: clamp(160px, 20vw, 280px);
-            height: clamp(160px, 20vw, 280px);
+            width: clamp(160px, 20vw, 240px);
+            height: auto;
             margin-bottom: clamp(1.2rem, 2vw, 2.2rem);
             display: flex;
             align-items: center;
             justify-content: center;
+            filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.3));
         }
 
         .illus-wrap svg {
@@ -188,6 +189,8 @@ if (empty($_SESSION['csrf_token'])) {
             align-items: center;
             justify-content: center;
             backdrop-filter: blur(8px);
+            overflow: hidden;
+            padding: 4px;
         }
 
         .wordmark-text {
@@ -546,16 +549,7 @@ if (empty($_SESSION['csrf_token'])) {
                 style="position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;text-align:center;">
 
                 <!-- Wordmark -->
-                <div class="wordmark-wrap">
-                    <div class="wordmark-icon">
-                        <svg style="width:56%;height:56%;" fill="none" viewBox="0 0 24 24" stroke="white"
-                            stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-                        </svg>
-                    </div>
-                    <span class="wordmark-text">AUF Library System</span>
-                </div>
+
 
                 <!--
         MINIMAL ILLUSTRATION
@@ -565,53 +559,7 @@ if (empty($_SESSION['csrf_token'])) {
         Calm, purposeful, and on-brand without any visual noise.
       -->
                 <div class="illus-wrap" aria-hidden="true">
-                    <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-
-                        <!-- Outer ring — slow, clockwise spin -->
-                        <circle cx="100" cy="100" r="88" stroke="rgba(255,255,255,0.12)" stroke-width="1"
-                            stroke-dasharray="16 10" style="transform-origin:100px 100px;
-                         animation:spinCW 40s linear infinite;" />
-
-                        <!-- Inner ring — counter-spin, slightly faster -->
-                        <circle cx="100" cy="100" r="68" stroke="rgba(255,255,255,0.18)" stroke-width="1"
-                            stroke-dasharray="6 12" style="transform-origin:100px 100px;
-                         animation:spinCCW 28s linear infinite;" />
-
-                        <!-- Solid thin ring — static, anchors the composition -->
-                        <circle cx="100" cy="100" r="50" stroke="rgba(255,255,255,0.30)" stroke-width="1.2" />
-
-                        <!-- Lock shackle (arc, stroke-only) -->
-                        <path d="M84 97 L84 87 C84 74 116 74 116 87 L116 97" stroke="white" stroke-width="2.2"
-                            stroke-linecap="round" fill="none" opacity="0.85" />
-
-                        <!-- Lock body (rounded rect, stroke-only) -->
-                        <rect x="78" y="96" width="44" height="32" rx="7" stroke="white" stroke-width="2.2" fill="none"
-                            opacity="0.85" />
-
-                        <!-- Keyhole dot -->
-                        <circle cx="100" cy="113" r="3.5" fill="rgba(255,255,255,0.5)" />
-
-                        <!-- Four cardinal accent dots on the static ring -->
-                        <circle cx="100" cy="50" r="2.5" fill="rgba(255,255,255,0.45)" />
-                        <circle cx="150" cy="100" r="2.5" fill="rgba(255,255,255,0.45)" />
-                        <circle cx="100" cy="150" r="2.5" fill="rgba(255,255,255,0.45)" />
-                        <circle cx="50" cy="100" r="2.5" fill="rgba(255,255,255,0.45)" />
-
-                        <!-- Corner bracket marks — ultra-minimal decoration -->
-                        <!-- top-left -->
-                        <path d="M18 30 L18 18 L30 18" stroke="rgba(255,255,255,0.20)" stroke-width="1.5"
-                            stroke-linecap="round" fill="none" />
-                        <!-- top-right -->
-                        <path d="M182 30 L182 18 L170 18" stroke="rgba(255,255,255,0.20)" stroke-width="1.5"
-                            stroke-linecap="round" fill="none" />
-                        <!-- bottom-left -->
-                        <path d="M18 170 L18 182 L30 182" stroke="rgba(255,255,255,0.20)" stroke-width="1.5"
-                            stroke-linecap="round" fill="none" />
-                        <!-- bottom-right -->
-                        <path d="M182 170 L182 182 L170 182" stroke="rgba(255,255,255,0.20)" stroke-width="1.5"
-                            stroke-linecap="round" fill="none" />
-
-                    </svg>
+                    <img src="../auf_ul_logo.png" alt="AUF University Library" class="w-full h-auto">
                 </div>
                 <!-- /MINIMAL ILLUSTRATION -->
 
