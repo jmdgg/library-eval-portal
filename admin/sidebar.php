@@ -61,6 +61,21 @@ function navLinkClass($page_name, $current_page)
                 class="ml-3 whitespace-nowrap sidebar-text tracking-wide text-sm font-semibold opacity-100 w-auto [.collapsed-sidebar_&]:opacity-0 [.collapsed-sidebar_&]:w-0 [.collapsed-sidebar_&]:hidden overflow-hidden transition-all duration-300 transform group-hover:translate-x-1">Respondents</span>
         </a>
 
+        <a href="feedback.php"
+            class="flex items-center px-5 py-3 [.collapsed-sidebar_&]:px-0 [.collapsed-sidebar_&]:justify-center group <?php echo navLinkClass('feedback.php', $current_page); ?> transition-all duration-300"
+            title="Feedback Inbox">
+            <div class="w-6 flex items-center justify-center flex-shrink-0 relative">
+                <svg class="w-5 h-5 transition-transform duration-300 group-hover:scale-110" fill="none"
+                    stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4">
+                    </path>
+                </svg>
+            </div>
+            <span
+                class="ml-3 whitespace-nowrap sidebar-text tracking-wide text-sm font-semibold opacity-100 w-auto [.collapsed-sidebar_&]:opacity-0 [.collapsed-sidebar_&]:w-0 [.collapsed-sidebar_&]:hidden overflow-hidden transition-all duration-300 transform group-hover:translate-x-1">Feedback Inbox</span>
+        </a>
+
         <a href="analytics.php"
             class="flex items-center px-5 py-3 [.collapsed-sidebar_&]:px-0 [.collapsed-sidebar_&]:justify-center group <?php echo navLinkClass('analytics.php', $current_page); ?> transition-all duration-300"
             title="Analytics & Reports">

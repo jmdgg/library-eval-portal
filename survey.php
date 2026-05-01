@@ -169,6 +169,16 @@ $satisfaction_options = ['Yes' => 1, 'No' => 0]; // For DB mapping
                 <h3 class="text-xl font-bold text-gray-800">Feedback Indicators</h3>
             </div>
             
+            <?php
+            $likert_colors = [
+                '5' => 'border-emerald-200 bg-emerald-50/50 text-emerald-700 has-[:checked]:bg-emerald-600 has-[:checked]:border-emerald-600 has-[:checked]:text-white hover:bg-emerald-100 hover:border-emerald-300',
+                '4' => 'border-teal-200 bg-teal-50/50 text-teal-700 has-[:checked]:bg-teal-500 has-[:checked]:border-teal-500 has-[:checked]:text-white hover:bg-teal-100 hover:border-teal-300',
+                '3' => 'border-slate-200 bg-slate-50/50 text-slate-600 has-[:checked]:bg-slate-500 has-[:checked]:border-slate-500 has-[:checked]:text-white hover:bg-slate-100 hover:border-slate-300',
+                '2' => 'border-orange-200 bg-orange-50/50 text-orange-700 has-[:checked]:bg-orange-500 has-[:checked]:border-orange-500 has-[:checked]:text-white hover:bg-orange-100 hover:border-orange-300',
+                '1' => 'border-rose-200 bg-rose-50/50 text-rose-700 has-[:checked]:bg-rose-600 has-[:checked]:border-rose-600 has-[:checked]:text-white hover:bg-rose-100 hover:border-rose-300'
+            ];
+            ?>
+
             <div class="space-y-8">
                 <?php foreach ($questions as $q): ?>
                 <fieldset class="bg-white border border-gray-100 shadow-sm rounded-2xl p-5 sm:p-6 relative group overflow-hidden">
@@ -178,7 +188,7 @@ $satisfaction_options = ['Yes' => 1, 'No' => 0]; // For DB mapping
                     <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
                         <?php foreach ($likert_options as $value => $label): ?>
                         <label class="block cursor-pointer relative h-full">
-                            <div class="flex flex-col items-center justify-center py-3 px-2 rounded-xl border border-gray-200 bg-gray-50/50 text-gray-500 has-[:checked]:bg-blue-600 has-[:checked]:border-blue-600 has-[:checked]:text-white hover:bg-gray-100 hover:border-gray-300 transition-all text-center h-full shadow-sm element-press">
+                            <div class="flex flex-col items-center justify-center py-3 px-2 rounded-xl border transition-all text-center h-full shadow-sm element-press <?php echo isset($rating_colors[$value]) ? $rating_colors[$value] : 'border-gray-200 bg-gray-50/50 text-gray-500 has-[:checked]:bg-blue-600 has-[:checked]:border-blue-600 has-[:checked]:text-white hover:bg-gray-100 hover:border-gray-300'; ?>">
                                 <input type="radio" name="feedback[<?php echo $q['question_id']; ?>]" value="<?php echo htmlspecialchars($value); ?>" class="sr-only" required>
                                 <span class="font-black text-xl mb-1"><?php echo htmlspecialchars($value); ?></span>
                                 <span class="text-[0.65rem] sm:text-xs font-semibold uppercase tracking-wider leading-tight text-center px-1"><?php echo htmlspecialchars($label); ?></span>

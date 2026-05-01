@@ -15,12 +15,80 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
 require_once '../db_connect.php';
 
 // Fetch All Submissions
+/* --- COMMENTED OUT FOR UI DESIGN ---
 try {
     $stmt = $pdo->query("SELECT submission_id, submission_date, role, college, respondent_name, department, overall_rating FROM survey_submission ORDER BY submission_date DESC, submission_id DESC");
     $allSubmissions = $stmt->fetchAll();
 } catch (Exception $e) {
     $allSubmissions = [];
 }
+-------------------------------------- */
+
+// --- PLACEHOLDER DATA FOR UI DESIGN ---
+// Remove this block and uncomment the block above when you are done designing.
+$allSubmissions = [
+    [
+        'submission_id' => 1,
+        'submission_date' => date('Y-m-d', strtotime('-1 days')),
+        'role' => 'Student',
+        'college' => 'CCS',
+        'respondent_name' => 'Juan Dela Cruz',
+        'department' => 'Circulation Section',
+        'overall_rating' => 'Excellent',
+        'likert_scores' => [5, 5, 4, 5],
+        'recommendations' => 'Please add more comfortable chairs in the reading area.',
+        'comments' => 'The library staff were very accommodating today. Thank you!'
+    ],
+    [
+        'submission_id' => 2,
+        'submission_date' => date('Y-m-d', strtotime('-3 days')),
+        'role' => 'Faculty',
+        'college' => 'CAS',
+        'respondent_name' => 'Maria Clara',
+        'department' => 'General Reference Section',
+        'overall_rating' => 'Very Good',
+        'likert_scores' => [4, 4, 5, 4],
+        'recommendations' => '',
+        'comments' => 'Great collection of newly acquired books.'
+    ],
+    [
+        'submission_id' => 3,
+        'submission_date' => date('Y-m-d', strtotime('-1 week')),
+        'role' => 'Alumni',
+        'college' => 'CBA',
+        'respondent_name' => 'Jose Rizal',
+        'department' => 'Filipiniana Section',
+        'overall_rating' => 'Good',
+        'likert_scores' => [3, 3, 3, 3],
+        'recommendations' => 'Extend library hours during weekends.',
+        'comments' => ''
+    ],
+    [
+        'submission_id' => 4,
+        'submission_date' => date('Y-m-d', strtotime('-2 weeks')),
+        'role' => 'Student',
+        'college' => 'CAMP',
+        'respondent_name' => 'Andres Bonifacio',
+        'department' => 'Health Sciences Library',
+        'overall_rating' => 'Fair',
+        'likert_scores' => [2, 3, 2, 2],
+        'recommendations' => 'Internet connection is quite slow in this section.',
+        'comments' => 'I had trouble accessing some of the online journals.'
+    ],
+    [
+        'submission_id' => 5,
+        'submission_date' => date('Y-m-d', strtotime('-1 month')),
+        'role' => 'NTP',
+        'college' => 'CEA',
+        'respondent_name' => 'Emilio Aguinaldo',
+        'department' => 'Computer and Multimedia Services (CMS)',
+        'overall_rating' => 'Needs Improvement',
+        'likert_scores' => [1, 2, 1, 1],
+        'recommendations' => 'Computers need to be upgraded.',
+        'comments' => 'Several PCs were out of order. Staff was busy and could not assist.'
+    ]
+];
+// --------------------------------------
 
 // 2. Fetch Admin Details to personalize the UI
 $username = $_SESSION['username'] ?? 'Admin';
@@ -54,42 +122,7 @@ $role_display = $is_superadmin ? 'Super Administrator' : 'Branch Administrator';
                 </p>
             </div>
 
-            <div class="flex items-center gap-4">
-                <form id="exportForm" action="generate_excel.php" method="GET" onsubmit="return validateDateRange()"
-                    class="flex items-center gap-2 bg-gray-50 p-1.5 rounded-lg border border-gray-200">
-                    <select name="start_month" id="start_month"
-                        class="text-xs border-gray-300 rounded-md shadow-sm py-1">
-                        <?php
-                        $months = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
-                        $currentMonth = strtoupper(date('F'));
-                        foreach ($months as $m) {
-                            $selected = ($m == $currentMonth) ? 'selected' : '';
-                            echo "<option value=\"$m\" $selected>" . ucfirst(strtolower($m)) . "</option>";
-                        }
-                        ?>
-                    </select>
-                    <input type="number" name="start_year" id="start_year" value="<?php echo date('Y'); ?>"
-                        class="text-xs w-16 border-gray-300 rounded-md shadow-sm py-1" required>
 
-                    <span class="text-gray-400 text-xs font-bold px-1">TO</span>
-
-                    <select name="end_month" id="end_month" class="text-xs border-gray-300 rounded-md shadow-sm py-1">
-                        <?php
-                        foreach ($months as $m) {
-                            $selected = ($m == $currentMonth) ? 'selected' : '';
-                            echo "<option value=\"$m\" $selected>" . ucfirst(strtolower($m)) . "</option>";
-                        }
-                        ?>
-                    </select>
-                    <input type="number" name="end_year" id="end_year" value="<?php echo date('Y'); ?>"
-                        class="text-xs w-16 border-gray-300 rounded-md shadow-sm py-1" required>
-
-                    <button type="submit"
-                        class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-md text-xs font-semibold transition shadow-sm ml-1">
-                        Export XLSX
-                    </button>
-                </form>
-            </div>
         </header>
 
         <main class="p-8 space-y-6">
@@ -144,6 +177,7 @@ $role_display = $is_superadmin ? 'Super Administrator' : 'Branch Administrator';
                                     if (empty($name)) {
                                         $filipinoNames = ["Juan Dela Cruz", "Maria Clara", "Jose Rizal", "Andres Bonifacio", "Emilio Aguinaldo", "Apolinario Mabini", "Marcelo H. del Pilar", "Sultan Kudarat", "Lapu-Lapu", "Gabriela Silang"];
                                         $name = $filipinoNames[array_rand($filipinoNames)] . " (Random)";
+                                        $sub['respondent_name'] = $name; // Ensure JS gets the generated name
                                     }
                                     ?>
                                     <tr class="hover:bg-gray-50/50 transition-colors">
@@ -153,7 +187,7 @@ $role_display = $is_superadmin ? 'Super Administrator' : 'Branch Administrator';
                                         <td class="py-4 px-6 font-medium text-gray-500"><?php echo htmlspecialchars($sub['role'] ?: 'N/A'); ?></td>
                                         <td class="py-4 px-6 font-medium text-gray-500"><?php echo htmlspecialchars($sub['department'] ?: 'N/A'); ?></td>
                                         <td class="py-4 px-6 text-right">
-                                            <button class="text-blue-600 hover:text-blue-800 font-bold text-xs uppercase tracking-wider transition-colors">View</button>
+                                            <button onclick="openModal(this)" data-respondent="<?php echo htmlspecialchars(json_encode($sub), ENT_QUOTES, 'UTF-8'); ?>" class="text-blue-600 hover:text-blue-800 font-bold text-xs uppercase tracking-wider transition-colors">View</button>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -169,7 +203,142 @@ $role_display = $is_superadmin ? 'Super Administrator' : 'Branch Administrator';
         </main>
     </div>
 
+    <!-- Modal UI Component -->
+    <div id="viewModal" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onclick="closeModal()"></div>
+        
+        <!-- Modal Content -->
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl transform scale-95 transition-transform duration-300 relative z-10 overflow-hidden mx-4 flex flex-col max-h-[90vh]">
+            <!-- Header -->
+            <div class="bg-blue-600 px-6 py-4 flex justify-between items-center shrink-0">
+                <h2 class="text-white font-bold text-lg">Respondent Evaluation Details</h2>
+                <button onclick="closeModal()" class="text-white hover:text-gray-200 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <!-- Body -->
+            <div class="p-5 space-y-4 overflow-y-auto">
+                <!-- Respondent Info -->
+                <div class="grid grid-cols-2 gap-3 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                    <div>
+                        <span class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Name</span>
+                        <span id="modalName" class="font-bold text-gray-800 text-sm"></span>
+                    </div>
+                    <div>
+                        <span class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Role & College</span>
+                        <span id="modalRoleCollege" class="font-bold text-gray-800 text-sm"></span>
+                    </div>
+                    <div>
+                        <span class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Date</span>
+                        <span id="modalDate" class="font-bold text-gray-800 text-sm"></span>
+                    </div>
+                    <div>
+                        <span class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Library Department</span>
+                        <span id="modalDepartment" class="font-bold text-gray-800 text-sm"></span>
+                    </div>
+                </div>
+
+                <!-- Likert Scales -->
+                <div>
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-1">Evaluation Indicators</h3>
+                    <div class="space-y-2">
+                        <!-- Q1 -->
+                        <div class="flex items-center justify-between px-4 py-2.5 rounded-xl border border-gray-100 shadow-sm bg-white">
+                            <span class="text-sm font-medium text-gray-700 leading-snug pr-4">Sufficient resources for research and information needs</span>
+                            <div id="modalQ1" class="flex-shrink-0 px-3 py-1 rounded-lg text-[11px] font-bold tracking-wider uppercase text-center min-w-[130px]"></div>
+                        </div>
+                        <!-- Q2 -->
+                        <div class="flex items-center justify-between px-4 py-2.5 rounded-xl border border-gray-100 shadow-sm bg-white">
+                            <span class="text-sm font-medium text-gray-700 leading-snug pr-4">Staff provided assistance in a timely and helpful manner</span>
+                            <div id="modalQ2" class="flex-shrink-0 px-3 py-1 rounded-lg text-[11px] font-bold tracking-wider uppercase text-center min-w-[130px]"></div>
+                        </div>
+                        <!-- Q3 -->
+                        <div class="flex items-center justify-between px-4 py-2.5 rounded-xl border border-gray-100 shadow-sm bg-white">
+                            <span class="text-sm font-medium text-gray-700 leading-snug pr-4">Process of borrowing, returning and renewal is convenient</span>
+                            <div id="modalQ3" class="flex-shrink-0 px-3 py-1 rounded-lg text-[11px] font-bold tracking-wider uppercase text-center min-w-[130px]"></div>
+                        </div>
+                        <!-- Q4 -->
+                        <div class="flex items-center justify-between px-4 py-2.5 rounded-xl border border-gray-100 shadow-sm bg-white">
+                            <span class="text-sm font-medium text-gray-700 leading-snug pr-4">Information/procedure provided were easy to understand</span>
+                            <div id="modalQ4" class="flex-shrink-0 px-3 py-1 rounded-lg text-[11px] font-bold tracking-wider uppercase text-center min-w-[130px]"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="bg-gray-50 px-6 py-4 flex justify-end border-t border-gray-200 shrink-0">
+                <button onclick="closeModal()" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm">Close</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        const likertLabels = {
+            5: "Strongly Agree",
+            4: "Agree",
+            3: "Neutral",
+            2: "Disagree",
+            1: "Strongly Disagree"
+        };
+        const likertColors = {
+            5: "bg-emerald-100 text-emerald-700",
+            4: "bg-teal-100 text-teal-700",
+            3: "bg-slate-100 text-slate-700",
+            2: "bg-orange-100 text-orange-700",
+            1: "bg-rose-100 text-rose-700"
+        };
+
+        function openModal(btn) {
+            const data = JSON.parse(btn.getAttribute('data-respondent'));
+            
+            // Populate text
+            const name = data.respondent_name || "Anonymous";
+            document.getElementById('modalName').textContent = name;
+            
+            const roleCollege = (data.role || "N/A") + (data.college && data.college !== 'N/A' ? " • " + data.college : "");
+            document.getElementById('modalRoleCollege').textContent = roleCollege;
+            
+            const dateObj = new Date(data.submission_date);
+            document.getElementById('modalDate').textContent = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            document.getElementById('modalDepartment').textContent = data.department || "N/A";
+            
+            // Populate Likerts
+            if(data.likert_scores && data.likert_scores.length === 4) {
+                for(let i = 1; i <= 4; i++) {
+                    const score = data.likert_scores[i-1];
+                    const el = document.getElementById('modalQ' + i);
+                    el.textContent = likertLabels[score] || "N/A";
+                    el.className = "flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold tracking-wider uppercase text-center min-w-[140px] " + (likertColors[score] || "bg-gray-100 text-gray-700");
+                }
+            } else {
+                 for(let i = 1; i <= 4; i++) {
+                     const el = document.getElementById('modalQ' + i);
+                     el.textContent = "N/A";
+                     el.className = "flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold tracking-wider uppercase text-center min-w-[140px] bg-gray-100 text-gray-700";
+                 }
+            }
+            
+            // Show modal
+            const modal = document.getElementById('viewModal');
+            const modalContent = modal.querySelector('.transform');
+            
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modalContent.classList.remove('scale-95');
+            modalContent.classList.add('scale-100');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('viewModal');
+            const modalContent = modal.querySelector('.transform');
+            
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-95');
+        }
+
         const collegeAliases = {
             "camp": "college of allied medical professions",
             "cas": "college of arts and sciences",
@@ -265,32 +434,7 @@ $role_display = $is_superadmin ? 'Super Administrator' : 'Branch Administrator';
         filterCollege.addEventListener('change', applyFilters);
         filterUserType.addEventListener('change', applyFilters);
 
-        function validateDateRange() {
-            const months = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
 
-            const startMonth = document.getElementById('start_month').value;
-            const startYear = parseInt(document.getElementById('start_year').value);
-            const endMonth = document.getElementById('end_month').value;
-            const endYear = parseInt(document.getElementById('end_year').value);
-
-            const startMonthIdx = months.indexOf(startMonth);
-            const endMonthIdx = months.indexOf(endMonth);
-
-            const startDate = new Date(startYear, startMonthIdx, 1);
-            const endDate = new Date(endYear, endMonthIdx, 1);
-            const now = new Date();
-            const currentPeriod = new Date(now.getFullYear(), now.getMonth(), 1);
-
-            if (startDate > currentPeriod || endDate > currentPeriod) {
-                alert("Error: You cannot select a period in the future.");
-                return false;
-            }
-            if (startDate > endDate) {
-                alert("Error: 'From' date cannot be later than 'To' date.");
-                return false;
-            }
-            return true;
-        }
     </script>
 </body>
 

@@ -202,44 +202,7 @@ try {
                     &mdash; <?php echo $role_display; ?></p>
             </div>
 
-            <div class="flex items-center gap-4">
-                <form id="exportForm" action="generate_excel.php" method="GET" onsubmit="return validateDateRange()"
-                    class="flex items-center gap-2 bg-white/40 p-2 rounded-xl border border-slate-200/60 shadow-sm">
-                    <select name="start_month" id="start_month"
-                        class="text-xs border-slate-200 rounded-lg shadow-sm py-1.5 px-3 bg-white/50 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
-                        <?php
-                        $months = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
-                        $currentMonth = strtoupper(date('F'));
-                        foreach ($months as $m) {
-                            $selected = ($m == $currentMonth) ? 'selected' : '';
-                            echo "<option value=\"$m\" $selected>" . ucfirst(strtolower($m)) . "</option>";
-                        }
-                        ?>
-                    </select>
-                    <input type="number" name="start_year" id="start_year" value="<?php echo date('Y'); ?>"
-                        class="text-xs w-20 border-slate-200 rounded-lg shadow-sm py-1.5 px-3 bg-white/50 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                        required>
 
-                    <span class="text-xs font-bold text-slate-400 px-1">TO</span>
-
-                    <select name="end_month" id="end_month"
-                        class="text-xs border-slate-200 rounded-lg shadow-sm py-1.5 px-3 bg-white/50 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
-                        <?php
-                        foreach ($months as $m) {
-                            $selected = ($m == $currentMonth) ? 'selected' : '';
-                            echo "<option value=\"$m\" $selected>" . ucfirst(strtolower($m)) . "</option>";
-                        }
-                        ?>
-                    </select>
-                    <input type="number" name="end_year" id="end_year" value="<?php echo date('Y'); ?>"
-                        class="text-xs w-20 border-slate-200 rounded-lg shadow-sm py-1.5 px-3 bg-white/50 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                        required>
-
-                    <button type="submit" class="btn-apricot px-5 py-2 rounded-lg text-xs font-bold shadow-sm ml-2">
-                        Export Report (.xlsx)
-                    </button>
-                </form>
-            </div>
         </header>
 
         <main class="max-w-7xl mx-auto p-8 space-y-8 w-full flex-1">
@@ -567,31 +530,6 @@ try {
     </div>
 
     <script>
-        function validateDateRange() {
-            const months = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
-            const startMonth = document.getElementById('start_month').value;
-            const startYear = parseInt(document.getElementById('start_year').value);
-            const endMonth = document.getElementById('end_month').value;
-            const endYear = parseInt(document.getElementById('end_year').value);
-
-            const startMonthIdx = months.indexOf(startMonth);
-            const endMonthIdx = months.indexOf(endMonth);
-            const startDate = new Date(startYear, startMonthIdx, 1);
-            const endDate = new Date(endYear, endMonthIdx, 1);
-            const now = new Date();
-            const currentPeriod = new Date(now.getFullYear(), now.getMonth(), 1);
-
-            if (startDate > currentPeriod || endDate > currentPeriod) {
-                alert("Error: You cannot select a period in the future.");
-                return false;
-            }
-            if (startDate > endDate) {
-                alert("Error: 'From' date cannot be later than 'To' date.");
-                return false;
-            }
-            return true;
-        }
-
         document.addEventListener('DOMContentLoaded', function () {
             const trendCtx = document.getElementById('trendChart').getContext('2d');
             new Chart(trendCtx, {
