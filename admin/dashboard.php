@@ -364,8 +364,8 @@ try {
                         <h3 class="text-lg font-extrabold text-slate-800 tracking-tight">Recent Submissions</h3>
                         <p class="text-xs text-slate-500 mt-0.5">High-level view of latest library evaluations.</p>
                     </div>
-                    <button id="openSubmissionsModal"
-                        class="btn-apricot px-4 py-2 rounded-lg text-xs font-bold shadow-sm">View Full Vault</button>
+                    <a href="respondents.php"
+                        class="btn-apricot px-4 py-2 rounded-lg text-xs font-bold shadow-sm">Go To Respondents</a>
                 </div>
 
                 <div class="overflow-x-auto custom-scrollbar border border-slate-100 rounded-xl">
@@ -433,10 +433,10 @@ try {
                                     </tr>
                                 <?php endforeach; ?>
                             <?php else: ?>
-                                <tr>
-                                    <td colspan="6" class="py-12 text-center text-slate-400 font-medium italic">No recent
-                                        evaluation records found.</td>
-                                </tr>
+                                    <tr>
+                                        <td colspan="6" class="py-12 text-center text-slate-400 font-medium italic">No recent
+                                            evaluation records found.</td>
+                                    </tr>
                             <?php endif; ?>
                         </tbody>
                     </table>
@@ -522,22 +522,22 @@ try {
                         </thead>
                         <tbody class="text-sm divide-y divide-slate-50">
                             <?php foreach ($recentSubmissions as $sub): ?>
-                                <tr class="hover:bg-slate-50/50 transition-colors">
-                                    <td class="py-4 px-6 text-slate-500 font-medium"><?php echo $sub['submission_date']; ?>
-                                    </td>
-                                    <td class="py-4 px-6 font-bold text-slate-800">
-                                        <?php echo htmlspecialchars($sub['respondent_name'] ?: 'Anonymous'); ?></td>
-                                    <td class="py-4 px-6 font-bold text-blue-600">
-                                        <?php echo htmlspecialchars($sub['college']); ?></td>
-                                    <td class="py-4 px-6 font-medium text-slate-500">
-                                        <?php echo htmlspecialchars($sub['role']); ?></td>
-                                    <td class="py-4 px-6 font-medium text-slate-500">
-                                        <?php echo htmlspecialchars($sub['department']); ?></td>
-                                    <td class="py-4 px-6 text-right">
-                                        <button
-                                            class="text-blue-600 hover:text-blue-800 font-bold text-xs uppercase tracking-wider transition-colors">View</button>
-                                    </td>
-                                </tr>
+                                    <tr class="hover:bg-slate-50/50 transition-colors">
+                                        <td class="py-4 px-6 text-slate-500 font-medium"><?php echo $sub['submission_date']; ?>
+                                        </td>
+                                        <td class="py-4 px-6 font-bold text-slate-800">
+                                            <?php echo htmlspecialchars($sub['respondent_name'] ?: 'Anonymous'); ?></td>
+                                        <td class="py-4 px-6 font-bold text-blue-600">
+                                            <?php echo htmlspecialchars($sub['college']); ?></td>
+                                        <td class="py-4 px-6 font-medium text-slate-500">
+                                            <?php echo htmlspecialchars($sub['role']); ?></td>
+                                        <td class="py-4 px-6 font-medium text-slate-500">
+                                            <?php echo htmlspecialchars($sub['department']); ?></td>
+                                        <td class="py-4 px-6 text-right">
+                                            <button
+                                                class="text-blue-600 hover:text-blue-800 font-bold text-xs uppercase tracking-wider transition-colors">View</button>
+                                        </td>
+                                    </tr>
                             <?php endforeach; ?>
                         </tbody>
                     </table>
@@ -676,9 +676,7 @@ try {
         filterCollege.addEventListener('change', applyFilters);
         filterUserType.addEventListener('change', applyFilters);
 
-        const subModal = document.getElementById('submissionsModal');
-        document.getElementById('openSubmissionsModal').onclick = () => subModal.classList.remove('hidden');
-        document.getElementById('closeSubmissionsModalBtn').onclick = () => subModal.classList.add('hidden');
+
 
         const leadModal = document.getElementById('leaderboardModal');
         const leadContent = document.getElementById('leaderboardContent');
@@ -700,7 +698,6 @@ try {
 
         document.getElementById('closeLeaderboardBtn').onclick = () => leadModal.classList.add('hidden');
         window.onclick = (e) => {
-            if (e.target === subModal) subModal.classList.add('hidden');
             if (e.target === leadModal) leadModal.classList.add('hidden');
         };
     </script>
