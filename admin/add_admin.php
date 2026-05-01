@@ -27,11 +27,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-        // We pass NULL for department_id and 1 for is_superadmin to bypass legacy restrictions
-        // without breaking your database schema.
+        // Insert new admin into the normalized 3NF admin_user table
         $stmt = $pdo->prepare("
-            INSERT INTO admin_user (username, password_hash, department_id, is_superadmin, is_active) 
-            VALUES (?, ?, NULL, 1, 1)
+            INSERT INTO admin_user (username, password_hash, is_active) 
+            VALUES (?, ?, 1)
         ");
         $stmt->execute([$username, $hashed_password]);
 
