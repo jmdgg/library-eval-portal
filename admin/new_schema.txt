@@ -1,0 +1,168 @@
+-- --------------------------------------------------------
+-- AUF Library LEAP Database Schema (3NF Compliant)
+-- --------------------------------------------------------
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
+SET time_zone = "+00:00";
+
+-- --------------------------------------------------------
+-- 1. LOOKUP TABLES (The Foundation)
+-- --------------------------------------------------------
+
+-- Defines user demographics (Student, Faculty, NTP)
+CREATE TABLE `patron_type` (
+  `patron_type_id` int(11) NOT NULL AUTO_INCREMENT,
+  `type_name` varchar(50) NOT NULL,
+  PRIMARY KEY (`patron_type_id`),
+  UNIQUE KEY `idx_type_name` (`type_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Defines the colleges (CCS, CEA, CON, etc.)
+CREATE TABLE `college` (
+  `college_id` int(11) NOT NULL AUTO_INCREMENT,
+  `college_name` varchar(100) NOT NULL,
+  PRIMARY KEY (`college_id`),
+  UNIQUE KEY `idx_college_name` (`college_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Defines the academic departments linked to colleges
+CREATE TABLE `academic_department` (
+  `acad_dept_id` int(11) NOT NULL AUTO_INCREMENT,
+  `college_id` int(11) NOT NULL,
+  `dept_name` varchar(100) NOT NULL,
+  PRIMARY KEY (`acad_dept_id`),
+  KEY `idx_college` (`college_id`),
+  CONSTRAINT `fk_acad_college` FOREIGN KEY (`college_id`) REFERENCES `college` (`college_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Defines the physical library sections (Circulation, Reference, etc.)
+CREATE TABLE `library_department` (
+  `lib_dept_id` int(11) NOT NULL AUTO_INCREMENT,
+  `dept_name` varchar(100) NOT NULL,
+  PRIMARY KEY (`lib_dept_id`),
+  UNIQUE KEY `idx_dept_name` (`dept_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Defines the specific services offered (PC Usage, Book Borrowing, etc.)
+CREATE TABLE `library_service` (
+  `service_id` int(11) NOT NULL AUTO_INCREMENT,
+  `service_name` varchar(100) NOT NULL,
+  PRIMARY KEY (`service_id`),
+  UNIQUE KEY `idx_service_name` (`service_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Defines the scoring metrics/questions for the survey
+CREATE TABLE `question_metric` (
+  `question_id` int(11) NOT NULL AUTO_INCREMENT,
+  `category` varchar(50) NOT NULL,
+  `question_text` varchar(255) NOT NULL,
+  `max_score` int(11) NOT NULL DEFAULT 5,
+  PRIMARY KEY (`question_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+-- 2. ADMINISTRATIVE & SYSTEM TABLES
+-- --------------------------------------------------------
+
+-- Centralized Administrator Accounts (Stripped of branch/super admin bloat)
+CREATE TABLE `admin_user` (
+  `admin_id` int(11) NOT NULL AUTO_INCREMENT,
+  `username` varchar(50) NOT NULL,
+  `password_hash` varchar(255) NOT NULL,
+  `last_login` timestamp NULL DEFAULT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`admin_id`),
+  UNIQUE KEY `idx_username` (`username`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Immutable Audit Ledger
+CREATE TABLE `audit_log` (
+  `log_id` int(11) NOT NULL AUTO_INCREMENT,
+  `admin_id` int(11) NOT NULL,
+  `action_type` varchar(50) NOT NULL,
+  `action_details` text NOT NULL,
+  `ip_address` varchar(45) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`log_id`),
+  KEY `idx_admin_id` (`admin_id`),
+  CONSTRAINT `fk_audit_admin` FOREIGN KEY (`admin_id`) REFERENCES `admin_user` (`admin_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Replaced String Month/Year with native SQL Dates
+CREATE TABLE `evaluation_period` (
+  `period_id` int(11) NOT NULL AUTO_INCREMENT,
+  `start_date` date NOT NULL,
+  `end_date` date NOT NULL,
+  `is_processed` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`period_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `generated_report` (
+  `report_id` int(11) NOT NULL AUTO_INCREMENT,
+  `period_id` int(11) NOT NULL,
+  `file_name` varchar(255) NOT NULL,
+  `download_url` varchar(255) NOT NULL,
+  `generation_date` timestamp NOT NULL DEFAULT current_timestamp(),
+  `dashboard_data` longtext NOT NULL,
+  PRIMARY KEY (`report_id`),
+  KEY `idx_period_id` (`period_id`),
+  CONSTRAINT `fk_report_period` FOREIGN KEY (`period_id`) REFERENCES `evaluation_period` (`period_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+-- 3. TRANSACTIONAL TABLES (The Core Engine)
+-- --------------------------------------------------------
+
+-- The Main Survey Submission Entity
+CREATE TABLE `survey_submission` (
+  `submission_id` int(11) NOT NULL AUTO_INCREMENT,
+  `period_id` int(11) NOT NULL,
+  `lib_dept_id` int(11) NOT NULL,
+  `patron_type_id` int(11) NOT NULL,
+  `college_id` int(11) DEFAULT NULL, -- Nullable for NTPs
+  `acad_dept_id` int(11) DEFAULT NULL,
+  `email` varchar(255) NOT NULL,
+  `is_satisfied` tinyint(1) NOT NULL, -- Changed from varchar to boolean for faster indexing
+  `overall_rating` decimal(3,2) NOT NULL, -- Changed to decimal to support averages (e.g., 4.50)
+  `recommendations` text DEFAULT NULL,
+  `comments` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`submission_id`),
+  KEY `idx_period` (`period_id`),
+  KEY `idx_dept` (`lib_dept_id`),
+  KEY `idx_patron` (`patron_type_id`),
+  KEY `idx_college` (`college_id`),
+  KEY `idx_created_at` (`created_at`), -- Critical for Chart.js time-series queries
+  CONSTRAINT `fk_sub_period` FOREIGN KEY (`period_id`) REFERENCES `evaluation_period` (`period_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_sub_dept` FOREIGN KEY (`lib_dept_id`) REFERENCES `library_department` (`lib_dept_id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_sub_patron` FOREIGN KEY (`patron_type_id`) REFERENCES `patron_type` (`patron_type_id`) ON DELETE RESTRICT,
+  KEY `idx_acad_dept` (`acad_dept_id`),
+  CONSTRAINT `fk_sub_college` FOREIGN KEY (`college_id`) REFERENCES `college` (`college_id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_sub_acad_dept` FOREIGN KEY (`acad_dept_id`) REFERENCES `academic_department` (`acad_dept_id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- The Junction Table to fix the 1NF "Comma-Separated" Violation
+CREATE TABLE `submission_service` (
+  `submission_id` int(11) NOT NULL,
+  `service_id` int(11) NOT NULL,
+  PRIMARY KEY (`submission_id`, `service_id`),
+  KEY `idx_service` (`service_id`),
+  CONSTRAINT `fk_junction_sub` FOREIGN KEY (`submission_id`) REFERENCES `survey_submission` (`submission_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_junction_service` FOREIGN KEY (`service_id`) REFERENCES `library_service` (`service_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- The granular scoring metrics per submission
+CREATE TABLE `response_detail` (
+  `detail_id` int(11) NOT NULL AUTO_INCREMENT,
+  `submission_id` int(11) NOT NULL,
+  `question_id` int(11) NOT NULL,
+  `score` int(11) NOT NULL,
+  PRIMARY KEY (`detail_id`),
+  KEY `idx_submission` (`submission_id`),
+  KEY `idx_question` (`question_id`),
+  CONSTRAINT `fk_detail_sub` FOREIGN KEY (`submission_id`) REFERENCES `survey_submission` (`submission_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_detail_question` FOREIGN KEY (`question_id`) REFERENCES `question_metric` (`question_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+COMMIT;

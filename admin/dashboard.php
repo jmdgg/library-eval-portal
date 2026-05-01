@@ -28,19 +28,44 @@ try {
     $avgScore = round($stmt->fetchColumn() ?: 0, 1);
 
     // Most Active College
-    $stmt = $pdo->query("SELECT college FROM survey_submission WHERE college IS NOT NULL AND college != '' GROUP BY college ORDER BY COUNT(*) DESC LIMIT 1");
+    $stmt = $pdo->query("
+        SELECT c.college_name 
+        FROM survey_submission ss 
+        JOIN college c ON ss.college_id = c.college_id 
+        GROUP BY c.college_id 
+        ORDER BY COUNT(*) DESC LIMIT 1
+    ");
     $mostActiveCollege = $stmt->fetchColumn() ?: 'N/A';
 
-    // Pending Flags/Reviews
-    $stmt = $pdo->query("SELECT COUNT(*) FROM survey_submission WHERE overall_rating IN ('Fair', 'Needs Improvement')");
+    // Pending Flags/Reviews (overall_rating < 3.00)
+    $stmt = $pdo->query("SELECT COUNT(*) FROM survey_submission WHERE overall_rating < 3.00");
     $pendingFlags = $stmt->fetchColumn() ?: 0;
 
     // Recent Submissions
-    $stmt = $pdo->query("SELECT submission_id, submission_date, role, college, respondent_name, department, overall_rating FROM survey_submission ORDER BY submission_date DESC, submission_id DESC LIMIT 50");
+    $stmt = $pdo->query("
+        SELECT 
+            ss.submission_id, 
+            ss.created_at as submission_date, 
+            pt.type_name as role, 
+            COALESCE(c.college_name, 'N/A') as college, 
+            ss.email as respondent_name, 
+            ld.dept_name as department, 
+            ss.overall_rating 
+        FROM survey_submission ss
+        JOIN patron_type pt ON ss.patron_type_id = pt.patron_type_id
+        LEFT JOIN college c ON ss.college_id = c.college_id
+        JOIN library_department ld ON ss.lib_dept_id = ld.lib_dept_id
+        ORDER BY ss.created_at DESC, ss.submission_id DESC LIMIT 50
+    ");
     $recentSubmissions = $stmt->fetchAll();
 
     // Demographics
-    $stmt = $pdo->query("SELECT role, COUNT(*) as count FROM survey_submission GROUP BY role");
+    $stmt = $pdo->query("
+        SELECT pt.type_name as role, COUNT(*) as count 
+        FROM survey_submission ss
+        JOIN patron_type pt ON ss.patron_type_id = pt.patron_type_id 
+        GROUP BY pt.patron_type_id
+    ");
     $rolesData = $stmt->fetchAll();
     $rolesLabels = [];
     $rolesCounts = [];
@@ -50,7 +75,12 @@ try {
     }
 
     // Trend Data
-    $stmt = $pdo->query("SELECT DATE_FORMAT(submission_date, '%Y-%m') as month_str, COUNT(*) as count FROM survey_submission GROUP BY month_str ORDER BY month_str DESC LIMIT 12");
+    $stmt = $pdo->query("
+        SELECT DATE_FORMAT(created_at, '%Y-%m') as month_str, COUNT(*) as count 
+        FROM survey_submission 
+        GROUP BY month_str 
+        ORDER BY month_str DESC LIMIT 12
+    ");
     $trendDataRaw = $stmt->fetchAll();
     $trendDataRaw = array_reverse($trendDataRaw);
     $trendLabels = [];
@@ -376,17 +406,18 @@ try {
                                         </td>
                                         <td class="py-4 px-6 text-center">
                                             <?php
-                                            $rating = $sub['overall_rating'] ?? 'Fair';
-                                            $dot_color = 'bg-slate-400';
-                                            if (in_array($rating, ['Excellent', 'Very Satisfactory', 'Satisfactory']))
+                                            $rating = (float)$sub['overall_rating'];
+                                            if ($rating >= 3.00) {
                                                 $dot_color = 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]';
-                                            if (in_array($rating, ['Fair', 'Needs Improvement']))
+                                                $label = 'Satisfactory';
+                                            } else {
                                                 $dot_color = 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.4)]';
+                                                $label = 'Needs Impr.';
+                                            }
                                             ?>
                                             <div class="flex items-center justify-center gap-2">
                                                 <span class="w-2 h-2 rounded-full <?php echo $dot_color; ?>"></span>
-                                                <span
-                                                    class="text-[10px] font-bold uppercase tracking-tight text-slate-500"><?php echo $rating; ?></span>
+                                                <span class="text-[10px] font-bold uppercase tracking-tight text-slate-500" title="Score: <?php echo $rating; ?>"><?php echo $label; ?></span>
                                             </div>
                                         </td>
                                         <td class="py-4 px-6">
