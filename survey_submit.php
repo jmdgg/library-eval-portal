@@ -35,15 +35,15 @@ try {
 
     // 3. Extract Demographics & Inputs
     $email = filter_var($_POST['email'] ?? '', FILTER_SANITIZE_EMAIL);
-    $lib_dept_id = (int)($_POST['lib_dept_id'] ?? 0);
-    $patron_type_id = (int)($_POST['patron_type_id'] ?? 0);
+    $lib_dept_id = (int) ($_POST['lib_dept_id'] ?? 0);
+    $patron_type_id = (int) ($_POST['patron_type_id'] ?? 0);
     $other_patron_details = !empty($_POST['other_patron_details']) ? htmlspecialchars($_POST['other_patron_details']) : null;
-    
-    // College might be omitted (e.g. for NTPs)
-    $college_id = !empty($_POST['college_id']) ? (int)$_POST['college_id'] : null;
-    $acad_dept_id = !empty($_POST['acad_dept_id']) ? (int)$_POST['acad_dept_id'] : null;
 
-    $is_satisfied = (int)($_POST['is_satisfied'] ?? 0);
+    // College might be omitted (e.g. for NTPs)
+    $college_id = !empty($_POST['college_id']) ? (int) $_POST['college_id'] : null;
+    $acad_dept_id = !empty($_POST['acad_dept_id']) ? (int) $_POST['acad_dept_id'] : null;
+
+    $is_satisfied = (int) ($_POST['is_satisfied'] ?? 0);
     $recommendations = htmlspecialchars($_POST['recommendations'] ?? '');
     $comments = htmlspecialchars($_POST['comments'] ?? '');
 
@@ -52,11 +52,11 @@ try {
     if (empty($feedback)) {
         throw new Exception("No feedback scores submitted.");
     }
-    
+
     $total_score = 0;
     $question_count = count($feedback);
     foreach ($feedback as $question_id => $score) {
-        $total_score += (int)$score;
+        $total_score += (int) $score;
     }
     $overall_rating = round($total_score / $question_count, 2);
     $created_at = date('Y-m-d H:i:s', $timestamp); // Or use current timestamp
@@ -69,8 +69,18 @@ try {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     $stmt->execute([
-        $period_id, $lib_dept_id, $patron_type_id, $other_patron_details, $college_id, $acad_dept_id, $email,
-        $is_satisfied, $overall_rating, $recommendations, $comments, $created_at
+        $period_id,
+        $lib_dept_id,
+        $patron_type_id,
+        $other_patron_details,
+        $college_id,
+        $acad_dept_id,
+        $email,
+        $is_satisfied,
+        $overall_rating,
+        $recommendations,
+        $comments,
+        $created_at
     ]);
 
     $submission_id = $pdo->lastInsertId();
@@ -85,14 +95,14 @@ try {
         $service_stmt = $pdo->prepare("INSERT INTO submission_service (submission_id, service_id, other_service_details) VALUES (?, ?, ?)");
         foreach ($services as $service_id) {
             $details = ($service_id == $other_service_id) ? $other_service_details : null;
-            $service_stmt->execute([$submission_id, (int)$service_id, $details]);
+            $service_stmt->execute([$submission_id, (int) $service_id, $details]);
         }
     }
 
     // 7. Insert CHILD Records (`response_detail`)
     $detail_stmt = $pdo->prepare("INSERT INTO response_detail (submission_id, question_id, score) VALUES (?, ?, ?)");
     foreach ($feedback as $question_id => $score) {
-        $detail_stmt->execute([$submission_id, (int)$question_id, (int)$score]);
+        $detail_stmt->execute([$submission_id, (int) $question_id, (int) $score]);
     }
 
     // 8. Success! Commit everything to the database.
@@ -104,7 +114,7 @@ try {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
-    
+
     error_log("Survey Submission Error: " . $e->getMessage());
     header("Location: survey.php?error=submission_failed");
     exit;
