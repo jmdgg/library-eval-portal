@@ -334,8 +334,8 @@ try {
                         <h3 class="text-lg font-extrabold text-slate-800 tracking-tight">Recent Submissions</h3>
                         <p class="text-xs text-slate-500 mt-0.5">High-level view of latest library evaluations.</p>
                     </div>
-                    <button id="openSubmissionsModal"
-                        class="btn-apricot px-4 py-2 rounded-lg text-xs font-bold shadow-sm">View Full Vault</button>
+                    <a href="respondents.php"
+                        class="btn-apricot px-4 py-2 rounded-lg text-xs font-bold shadow-sm">Go To Respondents</a>
                 </div>
 
                 <div class="overflow-x-auto custom-scrollbar border border-slate-100 rounded-xl">
@@ -360,52 +360,52 @@ try {
                         </thead>
                         <tbody class="text-sm divide-y divide-slate-50 bg-white">
                             <?php if (!empty($recentSubmissions)): ?>
-                                <?php foreach (array_slice($recentSubmissions, 0, 10) as $sub): ?>
-                                    <tr class="hover:bg-slate-50/50 transition-colors group">
-                                        <td class="py-4 px-6 text-slate-600 font-medium">
-                                            <?php echo date('M d, Y', strtotime($sub['submission_date'])); ?></td>
-                                        <td class="py-4 px-6">
-                                            <div class="flex items-center gap-3">
-                                                <div
-                                                    class="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center font-bold text-xs uppercase">
-                                                    <?php echo strtoupper(substr($sub['respondent_name'] ?: 'A', 0, 1)); ?>
-                                                </div>
-                                                <span
-                                                    class="font-bold text-slate-800"><?php echo htmlspecialchars($sub['respondent_name'] ?: 'Anonymous'); ?></span>
-                                            </div>
-                                        </td>
-                                        <td class="py-4 px-6 text-center">
-                                            <?php
-                                            $rating = $sub['overall_rating'] ?? 'Fair';
-                                            $dot_color = 'bg-slate-400';
-                                            if (in_array($rating, ['Excellent', 'Very Satisfactory', 'Satisfactory']))
-                                                $dot_color = 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]';
-                                            if (in_array($rating, ['Fair', 'Needs Improvement']))
-                                                $dot_color = 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.4)]';
-                                            ?>
-                                            <div class="flex items-center justify-center gap-2">
-                                                <span class="w-2 h-2 rounded-full <?php echo $dot_color; ?>"></span>
-                                                <span
-                                                    class="text-[10px] font-bold uppercase tracking-tight text-slate-500"><?php echo $rating; ?></span>
-                                            </div>
-                                        </td>
-                                        <td class="py-4 px-6">
-                                            <span
-                                                class="bg-slate-100 text-slate-600 px-2 py-1 rounded-md text-[10px] font-bold"><?php echo htmlspecialchars($sub['college']); ?></span>
-                                        </td>
-                                        <td class="py-4 px-6 text-slate-500 font-medium">
-                                            <?php echo htmlspecialchars($sub['role']); ?></td>
-                                        <td class="py-4 px-6 text-right">
-                                            <button
-                                                class="text-blue-600 hover:text-blue-800 font-bold text-xs uppercase tracking-wider transition-colors">Details</button>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
+                                    <?php foreach (array_slice($recentSubmissions, 0, 10) as $sub): ?>
+                                            <tr class="hover:bg-slate-50/50 transition-colors group">
+                                                <td class="py-4 px-6 text-slate-600 font-medium">
+                                                    <?php echo date('M d, Y', strtotime($sub['submission_date'])); ?></td>
+                                                <td class="py-4 px-6">
+                                                    <div class="flex items-center gap-3">
+                                                        <div
+                                                            class="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center font-bold text-xs uppercase">
+                                                            <?php echo strtoupper(substr($sub['respondent_name'] ?: 'A', 0, 1)); ?>
+                                                        </div>
+                                                        <span
+                                                            class="font-bold text-slate-800"><?php echo htmlspecialchars($sub['respondent_name'] ?: 'Anonymous'); ?></span>
+                                                    </div>
+                                                </td>
+                                                <td class="py-4 px-6 text-center">
+                                                    <?php
+                                                    $rating = $sub['overall_rating'] ?? 'Fair';
+                                                    $dot_color = 'bg-slate-400';
+                                                    if (in_array($rating, ['Excellent', 'Very Satisfactory', 'Satisfactory']))
+                                                        $dot_color = 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]';
+                                                    if (in_array($rating, ['Fair', 'Needs Improvement']))
+                                                        $dot_color = 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.4)]';
+                                                    ?>
+                                                    <div class="flex items-center justify-center gap-2">
+                                                        <span class="w-2 h-2 rounded-full <?php echo $dot_color; ?>"></span>
+                                                        <span
+                                                            class="text-[10px] font-bold uppercase tracking-tight text-slate-500"><?php echo $rating; ?></span>
+                                                    </div>
+                                                </td>
+                                                <td class="py-4 px-6">
+                                                    <span
+                                                        class="bg-slate-100 text-slate-600 px-2 py-1 rounded-md text-[10px] font-bold"><?php echo htmlspecialchars($sub['college']); ?></span>
+                                                </td>
+                                                <td class="py-4 px-6 text-slate-500 font-medium">
+                                                    <?php echo htmlspecialchars($sub['role']); ?></td>
+                                                <td class="py-4 px-6 text-right">
+                                                    <button
+                                                        class="text-blue-600 hover:text-blue-800 font-bold text-xs uppercase tracking-wider transition-colors">Details</button>
+                                                </td>
+                                            </tr>
+                                    <?php endforeach; ?>
                             <?php else: ?>
-                                <tr>
-                                    <td colspan="6" class="py-12 text-center text-slate-400 font-medium italic">No recent
-                                        evaluation records found.</td>
-                                </tr>
+                                    <tr>
+                                        <td colspan="6" class="py-12 text-center text-slate-400 font-medium italic">No recent
+                                            evaluation records found.</td>
+                                    </tr>
                             <?php endif; ?>
                         </tbody>
                     </table>
@@ -491,22 +491,22 @@ try {
                         </thead>
                         <tbody class="text-sm divide-y divide-slate-50">
                             <?php foreach ($recentSubmissions as $sub): ?>
-                                <tr class="hover:bg-slate-50/50 transition-colors">
-                                    <td class="py-4 px-6 text-slate-500 font-medium"><?php echo $sub['submission_date']; ?>
-                                    </td>
-                                    <td class="py-4 px-6 font-bold text-slate-800">
-                                        <?php echo htmlspecialchars($sub['respondent_name'] ?: 'Anonymous'); ?></td>
-                                    <td class="py-4 px-6 font-bold text-blue-600">
-                                        <?php echo htmlspecialchars($sub['college']); ?></td>
-                                    <td class="py-4 px-6 font-medium text-slate-500">
-                                        <?php echo htmlspecialchars($sub['role']); ?></td>
-                                    <td class="py-4 px-6 font-medium text-slate-500">
-                                        <?php echo htmlspecialchars($sub['department']); ?></td>
-                                    <td class="py-4 px-6 text-right">
-                                        <button
-                                            class="text-blue-600 hover:text-blue-800 font-bold text-xs uppercase tracking-wider transition-colors">View</button>
-                                    </td>
-                                </tr>
+                                    <tr class="hover:bg-slate-50/50 transition-colors">
+                                        <td class="py-4 px-6 text-slate-500 font-medium"><?php echo $sub['submission_date']; ?>
+                                        </td>
+                                        <td class="py-4 px-6 font-bold text-slate-800">
+                                            <?php echo htmlspecialchars($sub['respondent_name'] ?: 'Anonymous'); ?></td>
+                                        <td class="py-4 px-6 font-bold text-blue-600">
+                                            <?php echo htmlspecialchars($sub['college']); ?></td>
+                                        <td class="py-4 px-6 font-medium text-slate-500">
+                                            <?php echo htmlspecialchars($sub['role']); ?></td>
+                                        <td class="py-4 px-6 font-medium text-slate-500">
+                                            <?php echo htmlspecialchars($sub['department']); ?></td>
+                                        <td class="py-4 px-6 text-right">
+                                            <button
+                                                class="text-blue-600 hover:text-blue-800 font-bold text-xs uppercase tracking-wider transition-colors">View</button>
+                                        </td>
+                                    </tr>
                             <?php endforeach; ?>
                         </tbody>
                     </table>
@@ -645,9 +645,7 @@ try {
         filterCollege.addEventListener('change', applyFilters);
         filterUserType.addEventListener('change', applyFilters);
 
-        const subModal = document.getElementById('submissionsModal');
-        document.getElementById('openSubmissionsModal').onclick = () => subModal.classList.remove('hidden');
-        document.getElementById('closeSubmissionsModalBtn').onclick = () => subModal.classList.add('hidden');
+
 
         const leadModal = document.getElementById('leaderboardModal');
         const leadContent = document.getElementById('leaderboardContent');
@@ -669,7 +667,6 @@ try {
 
         document.getElementById('closeLeaderboardBtn').onclick = () => leadModal.classList.add('hidden');
         window.onclick = (e) => {
-            if (e.target === subModal) subModal.classList.add('hidden');
             if (e.target === leadModal) leadModal.classList.add('hidden');
         };
     </script>

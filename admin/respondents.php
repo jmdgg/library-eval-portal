@@ -12,6 +12,16 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
     exit;
 }
 
+require_once '../db_connect.php';
+
+// Fetch All Submissions
+try {
+    $stmt = $pdo->query("SELECT submission_id, submission_date, role, college, respondent_name, department, overall_rating FROM survey_submission ORDER BY submission_date DESC, submission_id DESC");
+    $allSubmissions = $stmt->fetchAll();
+} catch (Exception $e) {
+    $allSubmissions = [];
+}
+
 // 2. Fetch Admin Details to personalize the UI
 $username = $_SESSION['username'] ?? 'Admin';
 $is_superadmin = $_SESSION['is_superadmin'] ?? 0;
@@ -83,47 +93,178 @@ $role_display = $is_superadmin ? 'Super Administrator' : 'Branch Administrator';
         </header>
 
         <main class="p-8 space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- KPI Cards Placeholder -->
-                <div
-                    class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center h-32">
-                    <p class="text-xs font-bold text-gray-400 uppercase mb-1">Total Respondents</p>
-                    <p class="text-3xl font-black text-gray-800">--</p>
+            <!-- Filter Toolbar -->
+            <div class="flex flex-col md:flex-row gap-4 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <div class="flex-grow relative group">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-500 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                    <input type="text" id="advancedSearch" class="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium" placeholder="Try 'college:ccs student' or 'smith'...">
                 </div>
-                <div
-                    class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center h-32">
-                    <p class="text-xs font-bold text-gray-400 uppercase mb-1">Avg Satisfaction</p>
-                    <p class="text-3xl font-black text-gray-800">--</p>
-                </div>
-                <div
-                    class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center h-32">
-                    <p class="text-xs font-bold text-gray-400 uppercase mb-1">System Status</p>
-                    <p class="text-sm font-bold text-green-600 bg-green-50 px-3 py-1 rounded-full">ACTIVE</p>
+                <div class="flex gap-2">
+                    <select id="filterCollege" class="bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm font-bold text-gray-700 shadow-sm outline-none focus:border-blue-500 transition-colors">
+                        <option value="All Colleges">All Colleges</option>
+                        <?php
+                        $colleges = ["CAMP", "CAS", "CBA", "CCS", "CCJE", "CEA", "CED", "CON", "SOL", "SOM", "GS", "IS", "N/A"];
+                        foreach ($colleges as $c) echo "<option value=\"$c\">$c</option>";
+                        ?>
+                    </select>
+                    <select id="filterUserType" class="bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm font-bold text-gray-700 shadow-sm outline-none focus:border-blue-500 transition-colors">
+                        <option value="All User Types">All User Types</option>
+                        <option value="Student">Student</option>
+                        <option value="Faculty">Faculty</option>
+                        <option value="Alumni">Alumni</option>
+                        <option value="NTP">NTP</option>
+                        <option value="Other Researcher">Other Researcher</option>
+                    </select>
                 </div>
             </div>
 
-            <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-                <h2 class="text-lg font-bold text-gray-800 mb-6">Performance Overview -
-                    <?php echo date('F Y'); ?>
-                </h2>
-
-                <div id="chart-container"
-                    class="w-full h-96 flex items-center justify-center border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
-                    <div class="text-center">
-                        <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
-                            </path>
-                        </svg>
-                        <p class="text-gray-400 font-medium">Chart.js visualizations will be rendered here.</p>
-                    </div>
+            <!-- Data Table -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse" id="expandedSubmissionsTable">
+                        <thead class="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th class="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Date</th>
+                                <th class="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Name</th>
+                                <th class="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">College</th>
+                                <th class="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">User Type</th>
+                                <th class="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Library Dept.</th>
+                                <th class="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm divide-y divide-gray-50">
+                            <?php if (!empty($allSubmissions)): ?>
+                                <?php foreach ($allSubmissions as $sub): ?>
+                                    <?php
+                                    $name = $sub['respondent_name'];
+                                    if (empty($name)) {
+                                        $filipinoNames = ["Juan Dela Cruz", "Maria Clara", "Jose Rizal", "Andres Bonifacio", "Emilio Aguinaldo", "Apolinario Mabini", "Marcelo H. del Pilar", "Sultan Kudarat", "Lapu-Lapu", "Gabriela Silang"];
+                                        $name = $filipinoNames[array_rand($filipinoNames)] . " (Random)";
+                                    }
+                                    ?>
+                                    <tr class="hover:bg-gray-50/50 transition-colors">
+                                        <td class="py-4 px-6 text-gray-500 font-medium"><?php echo htmlspecialchars(date('M d, Y', strtotime($sub['submission_date']))); ?></td>
+                                        <td class="py-4 px-6 font-bold text-gray-800"><?php echo htmlspecialchars($name); ?></td>
+                                        <td class="py-4 px-6 font-bold text-blue-600"><?php echo htmlspecialchars($sub['college'] ?: 'N/A'); ?></td>
+                                        <td class="py-4 px-6 font-medium text-gray-500"><?php echo htmlspecialchars($sub['role'] ?: 'N/A'); ?></td>
+                                        <td class="py-4 px-6 font-medium text-gray-500"><?php echo htmlspecialchars($sub['department'] ?: 'N/A'); ?></td>
+                                        <td class="py-4 px-6 text-right">
+                                            <button class="text-blue-600 hover:text-blue-800 font-bold text-xs uppercase tracking-wider transition-colors">View</button>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="6" class="py-12 text-center text-gray-400 font-medium italic">No evaluation records found.</td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </main>
     </div>
 
     <script>
+        const collegeAliases = {
+            "camp": "college of allied medical professions",
+            "cas": "college of arts and sciences",
+            "cba": "college of business and accountancy",
+            "ccs": "college of computer studies",
+            "ccje": "college of criminal justice education",
+            "cea": "college of engineering",
+            "ced": "college of education",
+            "con": "college of nursing",
+            "sol": "school of law",
+            "som": "school of medicine",
+            "gs": "graduate school",
+            "is": "integrated school"
+        };
+
+        function parseSearchQuery(input) {
+            const tokens = input.trim().split(/\s+/);
+            const filters = { tokens: {}, freeText: [] };
+            
+            tokens.forEach(token => {
+                if (token.includes(':') && !token.startsWith(':') && !token.endsWith(':')) {
+                    const parts = token.split(':');
+                    filters.tokens[parts[0].toLowerCase()] = parts[1].toLowerCase();
+                } else {
+                    if (token) filters.freeText.push(token.toLowerCase());
+                }
+            });
+            return filters;
+        }
+
+        function checkMatch(text, term) {
+            if (text.includes(term)) return true;
+            if (collegeAliases[term] && text.includes(collegeAliases[term])) return true;
+            
+            for (const key in collegeAliases) {
+                if (collegeAliases[key].includes(term) && text.includes(key)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        const advancedSearch = document.getElementById('advancedSearch');
+        const filterCollege = document.getElementById('filterCollege');
+        const filterUserType = document.getElementById('filterUserType');
+
+        function applyFilters() {
+            const query = advancedSearch.value.toLowerCase();
+            const collegeVal = filterCollege.value;
+            const userTypeVal = filterUserType.value;
+            const parsedQuery = parseSearchQuery(query);
+            
+            const rows = document.querySelectorAll('#expandedSubmissionsTable tbody tr');
+            rows.forEach(row => {
+                if(row.cells.length < 6) return;
+                
+                let isMatch = true;
+                
+                // Indices: Date=0, Name=1, College=2, User Type=3, Library Dept=4, Action=5
+                const rowCollege = row.cells[2].innerText.toLowerCase();
+                const rowType = row.cells[3].innerText.toLowerCase();
+                const rowDept = row.cells[4].innerText.toLowerCase();
+                const rowText = row.innerText.toLowerCase();
+
+                // 1. Dropdown Checks
+                if (collegeVal !== 'All Colleges' && rowCollege !== collegeVal.toLowerCase()) {
+                    isMatch = false;
+                }
+                if (isMatch && userTypeVal !== 'All User Types' && rowType !== userTypeVal.toLowerCase()) {
+                    isMatch = false;
+                }
+
+                // 2. Tokenized Checks
+                if (isMatch) {
+                    for (const [key, val] of Object.entries(parsedQuery.tokens)) {
+                        if (key === 'college' && !checkMatch(rowCollege, val)) isMatch = false;
+                        if (key === 'type' && !checkMatch(rowType, val)) isMatch = false;
+                        if (key === 'dept' && !checkMatch(rowDept, val)) isMatch = false;
+                    }
+                }
+
+                // 3. Free Text Check
+                if (isMatch && parsedQuery.freeText.length > 0) {
+                    const matchesFreeText = parsedQuery.freeText.every(term => checkMatch(rowText, term));
+                    if (!matchesFreeText) isMatch = false;
+                }
+                
+                row.style.display = isMatch ? '' : 'none';
+            });
+        }
+
+        advancedSearch.addEventListener('input', applyFilters);
+        filterCollege.addEventListener('change', applyFilters);
+        filterUserType.addEventListener('change', applyFilters);
+
         function validateDateRange() {
             const months = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
 
