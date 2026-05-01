@@ -5,12 +5,12 @@ require_once 'db_connect.php';
 $reportsByYear = [];
 
 try {
-    $stmt = $pdo->query("SELECT p.eval_month, p.eval_year, r.report_id, r.file_name, r.download_url, r.dashboard_data, r.generation_date FROM EVALUATION_PERIOD p JOIN GENERATED_REPORT r ON p.period_id = r.period_id ORDER BY r.generation_date DESC");
+    $stmt = $pdo->query("SELECT p.start_date, p.end_date, r.report_id, r.file_name, r.download_url, r.dashboard_data, r.generation_date FROM evaluation_period p JOIN generated_report r ON p.period_id = r.period_id ORDER BY r.generation_date DESC");
     $data = $stmt->fetchAll();
 
     if ($data) {
         foreach ($data as $entry) {
-            $year = isset($entry['eval_year']) ? $entry['eval_year'] : 'Unknown Year';
+            $year = !empty($entry['start_date']) ? date('Y', strtotime($entry['start_date'])) : 'Unknown Year';
             if (!isset($reportsByYear[$year])) {
                 $reportsByYear[$year] = [];
             }
@@ -77,8 +77,8 @@ try {
                                 <?php foreach ($reports as $report): ?>
                                     <?php
                                     $reportId = htmlspecialchars($report['report_id'] ?? '');
-                                    $reportDateStr = ($report['eval_month'] ?? '') . ' ' . ($report['eval_year'] ?? '');
-                                    $reportDate = htmlspecialchars(trim($reportDateStr) ?: 'Unknown Date');
+                                    $reportDateStr = !empty($report['start_date']) ? date('F Y', strtotime($report['start_date'])) : 'Unknown Date';
+                                    $reportDate = htmlspecialchars($reportDateStr);
                                     $downloadUrl = htmlspecialchars($report['download_url'] ?? '#');
                                     // The database stores JSON string in dashboard_data, so no need to json_encode it again
                                     $reportDataJson = htmlspecialchars($report['dashboard_data'] ?? '[]', ENT_QUOTES, 'UTF-8');

@@ -9,11 +9,12 @@ require_once 'db_connect.php';
 
 try {
     // 1. Identify the Current Period
-    $month_str = strtoupper(date('F'));
-    $year_int = (int) date('Y');
+    $current_date = time();
+    $start_date = date('Y-m-01', $current_date);
+    $end_date = date('Y-m-t', $current_date);
 
-    $period_stmt = $pdo->prepare("SELECT period_id FROM evaluation_period WHERE eval_month = ? AND eval_year = ? LIMIT 1");
-    $period_stmt->execute([$month_str, $year_int]);
+    $period_stmt = $pdo->prepare("SELECT period_id FROM evaluation_period WHERE start_date = ? AND end_date = ? LIMIT 1");
+    $period_stmt->execute([$start_date, $end_date]);
     $period = $period_stmt->fetch();
 
     if (!$period) {
@@ -40,19 +41,19 @@ try {
     }
 
     // 3. CACHE MISS: We must calculate the math.
-    // Query: Calculate the average score for each question, grouped by department
+    // Query: Calculate the average score for each question, grouped by library department
     $math_query = "
         SELECT 
-            d.department_name,
+            ld.dept_name as department_name,
             q.question_id,
             q.category,
             AVG(rd.score) as average_score
         FROM survey_submission ss
-        JOIN department d ON ss.department_id = d.department_id
+        JOIN library_department ld ON ss.lib_dept_id = ld.lib_dept_id
         JOIN response_detail rd ON ss.submission_id = rd.submission_id
         JOIN question_metric q ON rd.question_id = q.question_id
         WHERE ss.period_id = ?
-        GROUP BY d.department_id, q.question_id
+        GROUP BY ld.lib_dept_id, q.question_id
     ";
 
     $stmt = $pdo->prepare($math_query);

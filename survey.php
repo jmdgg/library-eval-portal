@@ -1,43 +1,32 @@
 <?php
-$form_data = [
-    'roles' => ['Student', 'Faculty', 'NTP', 'Alumni', 'Other Researcher', 'Other'],
-    'services' => [
-        'borrowing' => 'Borrowing / Renewal / Returning library material',
-        'document_delivery' => 'Document Delivery (Scanned Documents)',
-        'reference' => 'Reference Service (includes request for booklist, resources relative to a query/topic, etc)',
-        'tutorial' => 'One-on-one Library Online Tutorial Service',
-        'instruction' => 'Library Instruction Service (Class / Embedded Session)',
-        'clearance' => 'Clearance Request',
-        'turnitin' => 'Similarity Scanning Service (Turnitin)',
-        'credentials' => 'Login Credentials (user name and password)',
-        'recommendation' => 'Book Recommendation for Purchase',
-        'others' => 'Others'
-    ],
-    'feedback_statements' => [
-        'resources' => 'The library has sufficient resources for my research and information needs',
-        'staff_assistance' => 'Library staff provided assistance in a timely and helpful manner',
-        'process' => 'The process of borrowing, returning and renewal of library resources is convenient',
-        'procedures' => 'The information/procedure provided by the library staff were easy to understand'
-    ],
-    'likert_options' => [
-        '5' => 'Strongly Agree',
-        '4' => 'Agree',
-        '3' => 'Neutral',
-        '2' => 'Disagree',
-        '1' => 'Strongly Disagree'
-    ],
-    'libraries' => [
-        '1' => 'Circulation Section',
-        '2' => 'General Reference Section',
-        '3' => 'Computer and Multimedia Services (CMS)',
-        '4' => 'Health Sciences Library',
-        '5' => 'Filipiniana Section',
-        '6' => 'College of Business and Accountancy Library',
-        '7' => 'PS Library'
-    ],
-    'satisfaction_options' => ['Yes', 'No'],
-    'rating_options' => ['Excellent', 'Very Good', 'Good', 'Fair', 'Needs Improvement']
+require_once 'db_connect.php';
+
+// Fetch options from the new 3NF lookup tables
+$colleges = $pdo->query("SELECT * FROM college ORDER BY college_name")->fetchAll();
+$patron_types = $pdo->query("SELECT * FROM patron_type ORDER BY patron_type_id")->fetchAll();
+$library_departments = $pdo->query("SELECT * FROM library_department ORDER BY dept_name")->fetchAll();
+$library_services = $pdo->query("SELECT * FROM library_service ORDER BY service_id")->fetchAll();
+$questions = $pdo->query("SELECT * FROM question_metric ORDER BY question_id")->fetchAll();
+$academic_departments = $pdo->query("SELECT * FROM academic_department ORDER BY dept_name")->fetchAll();
+
+// Group departments by college for JS
+$dept_mapping = [];
+foreach ($academic_departments as $ad) {
+    $dept_mapping[$ad['college_id']][] = [
+        'id' => $ad['acad_dept_id'],
+        'name' => $ad['dept_name']
+    ];
+}
+$dept_json = json_encode($dept_mapping);
+
+$likert_options = [
+    '5' => 'Strongly Agree',
+    '4' => 'Agree',
+    '3' => 'Neutral',
+    '2' => 'Disagree',
+    '1' => 'Strongly Disagree'
 ];
+$satisfaction_options = ['Yes' => 1, 'No' => 0]; // For DB mapping
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -50,7 +39,7 @@ $form_data = [
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6; /* bg-gray-100 */
+            background-color: #f3f4f6;
         }
     </style>
 </head>
@@ -59,7 +48,6 @@ $form_data = [
 <div class="max-w-4xl mx-auto">
     <!-- Header -->
     <div class="flex flex-col items-center text-center mb-10">
-        <!-- Logo placeholder could go here if needed -->
         <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 tracking-tight">UNIVERSITY LIBRARY</h1>
         <h2 class="text-lg sm:text-xl font-semibold text-blue-700">Library Service Evaluation Form</h2>
         <p class="text-sm sm:text-base text-gray-500 mt-2 font-medium">for Higher Education Including Senior High School</p>
@@ -74,69 +62,54 @@ $form_data = [
         </div>
 
         <!-- Section 1: Demographics -->
-       
         <section class="space-y-6">
             <div class="flex items-center space-x-3 border-b border-gray-100 pb-3 mb-6">
                 <span class="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-sm">1</span>
                 <h3 class="text-xl font-bold text-gray-800">Demographics</h3>
             </div>
 
-              <div class="space-y-2">
-    <label for="email" class="block text-sm font-semibold text-gray-700">Email Address <span class="text-red-500">*</span></label>
-    <input type="email" name="email" id="email" required placeholder="e.g., x@auf.edu.ph" class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500">
-</div>
+            <div class="space-y-2">
+                <label for="email" class="block text-sm font-semibold text-gray-700">Email Address <span class="text-red-500">*</span></label>
+                <input type="email" name="email" id="email" required placeholder="e.g., x@auf.edu.ph" class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 outline-none transition duration-200">
+            </div>
             
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
-                    <label for="full_name" class="block text-sm font-semibold text-gray-700 mb-2">Full Name</label>
-                    <input type="text" id="full_name" name="full_name" required class="w-full rounded-xl border-gray-200 border bg-gray-50 p-3.5 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-200" placeholder="e.g., Juan Dela Cruz">
+                    <label for="full_name" class="block text-sm font-semibold text-gray-700 mb-2">Full Name <span class="text-sm font-normal text-gray-400 ml-1">(Optional)</span></label>
+                    <input type="text" id="full_name" name="full_name" class="w-full rounded-xl border-gray-200 border bg-gray-50 p-3.5 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-200" placeholder="e.g., Juan Dela Cruz">
                 </div>
                 <div>
                     <label for="date" class="block text-sm font-semibold text-gray-700 mb-2">Date</label>
                     <input type="date" id="date" name="date" required class="w-full rounded-xl border-gray-200 border bg-gray-50 p-3.5 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-200">
                 </div>
-                <div>
-                    <label for="college" class="block text-sm font-semibold text-gray-700 mb-2">College</label>
-                    <select id="college" name="college" required class="w-full rounded-xl border-gray-200 border bg-gray-50 p-3.5 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-200">
-                        <option value="" disabled selected>Select a College</option>
-                        <option value="Integrated School (IS)">Integrated School (IS)</option>
-                        <option value="College of Allied Medical Professions (CAMP)">College of Allied Medical Professions (CAMP)</option>
-                        <option value="College of Arts and Sciences (CAS)">College of Arts and Sciences (CAS)</option>
-                        <option value="College of Business and Accountancy (CBA)">College of Business and Accountancy (CBA)</option>
-                        <option value="College of Computer Studies (CCS)">College of Computer Studies (CCS)</option>
-                        <option value="College of Criminal Justice Education (CCJE)">College of Criminal Justice Education (CCJE)</option>
-                        <option value="College of Engineering and Architecture (CEA)">College of Engineering and Architecture (CEA)</option>
-                        <option value="College of Education (CED)">College of Education (CED)</option>
-                        <option value="College of Nursing (CON)">College of Nursing (CON)</option>
-                        <option value="School of Law (SOL)">School of Law (SOL)</option>
-                        <option value="School of Medicine (SOM)">School of Medicine (SOM)</option>
-                        <option value="Graduate School (GS)">Graduate School (GS)</option>
+                <div class="sm:col-span-2">
+                    <label for="college_id" class="block text-sm font-semibold text-gray-700 mb-2">College</label>
+                    <select id="college_id" name="college_id" class="w-full rounded-xl border-gray-200 border bg-gray-50 p-3.5 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-200">
+                        <option value="" selected>Select a College (Optional for NTP)</option>
+                        <?php foreach ($colleges as $c): ?>
+                            <option value="<?php echo $c['college_id']; ?>"><?php echo htmlspecialchars($c['college_name']); ?></option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
-                <div>
-                    <label for="department" class="block text-sm font-semibold text-gray-700 mb-2">Department</label>
-                    <select id="department" name="department" required disabled class="w-full rounded-xl border-gray-200 border bg-gray-50 p-3.5 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-200">
+                <div class="sm:col-span-2" id="department_container" style="display: none;">
+                    <label for="acad_dept_id" class="block text-sm font-semibold text-gray-700 mb-2">Academic Department</label>
+                    <select id="acad_dept_id" name="acad_dept_id" class="w-full rounded-xl border-gray-200 border bg-gray-50 p-3.5 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-200">
                         <option value="" disabled selected>Select a Department</option>
                     </select>
-                    <input type="text" id="department_other" name="department_other" class="w-full mt-3 rounded-xl border-gray-200 border bg-gray-50 p-3.5 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-200" placeholder="Please specify your program..." style="display: none;">
                 </div>
             </div>
 
             <div class="pt-2">
                 <label class="block text-sm font-semibold text-gray-700 mb-4">Please select the category that best describe your role in Angeles University Foundation.</label>
                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    <?php foreach ($form_data['roles'] as $role): ?>
+                    <?php foreach ($patron_types as $pt): ?>
                     <label class="block cursor-pointer relative h-full">
                         <div class="w-full h-full flex items-center justify-center text-center px-4 py-3.5 rounded-xl border-2 border-gray-100 bg-gray-50 text-gray-600 has-[:checked]:bg-blue-50 has-[:checked]:border-blue-600 has-[:checked]:text-blue-700 hover:border-blue-300 hover:bg-blue-50/50 transition-all font-medium text-sm shadow-sm element-press">
-                            <input type="radio" name="role" value="<?php echo htmlspecialchars($role); ?>" class="sr-only" required>
-                            <?php echo htmlspecialchars($role); ?>
+                            <input type="radio" name="patron_type_id" value="<?php echo $pt['patron_type_id']; ?>" class="sr-only" required>
+                            <?php echo htmlspecialchars($pt['type_name']); ?>
                         </div>
                     </label>
                     <?php endforeach; ?>
-                </div>
-                <!-- Dynamic text input for 'Other' -->
-                <div class="mt-4 hidden" id="role_other_container">
-                    <input type="text" id="role_other" name="role_other" placeholder="Please specify your role" class="w-full sm:w-1/2 rounded-xl border-gray-200 border bg-gray-50 p-3.5 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-200 text-sm">
                 </div>
             </div>
         </section>
@@ -149,12 +122,12 @@ $form_data = [
             </div>
             
             <div>
-                <label for="department_id" class="block text-sm font-semibold text-gray-700 mb-4">Which Library accommodated your request?</label>
+                <label for="lib_dept_id" class="block text-sm font-semibold text-gray-700 mb-4">Which Library accommodated your request?</label>
                 <div class="relative">
-                    <select id="department_id" name="department_id" required class="w-full appearance-none rounded-xl border-2 border-gray-100 bg-gray-50 px-5 py-4 text-gray-700 font-medium focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-600 outline-none transition-all cursor-pointer shadow-sm">
+                    <select id="lib_dept_id" name="lib_dept_id" required class="w-full appearance-none rounded-xl border-2 border-gray-100 bg-gray-50 px-5 py-4 text-gray-700 font-medium focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-600 outline-none transition-all cursor-pointer shadow-sm">
                         <option value="" disabled selected>Select a Library Department</option>
-                        <?php foreach ($form_data['libraries'] as $id => $name): ?>
-                        <option value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($name); ?></option>
+                        <?php foreach ($library_departments as $ld): ?>
+                        <option value="<?php echo $ld['lib_dept_id']; ?>"><?php echo htmlspecialchars($ld['dept_name']); ?></option>
                         <?php endforeach; ?>
                     </select>
                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-blue-600">
@@ -170,16 +143,16 @@ $form_data = [
                 </div>
                 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="services_container">
-                    <?php foreach ($form_data['services'] as $key => $service): ?>
+                    <?php foreach ($library_services as $ls): ?>
                     <label class="block cursor-pointer relative h-full group">
                         <div class="h-full flex items-start p-4 rounded-xl border-2 border-gray-100 bg-gray-50 text-gray-600 has-[:checked]:bg-blue-50 has-[:checked]:border-blue-600 has-[:checked]:text-blue-800 hover:border-blue-300 hover:bg-blue-50/50 transition-all shadow-sm">
-                            <input type="checkbox" name="services[]" value="<?php echo htmlspecialchars($key); ?>" class="sr-only service-checkbox">
+                            <input type="checkbox" name="services[]" value="<?php echo $ls['service_id']; ?>" class="sr-only service-checkbox">
                             <div class="flex-shrink-0 mt-0.5 mr-3 w-5 h-5 rounded border-2 border-gray-300 group-has-[:checked]:bg-blue-600 group-has-[:checked]:border-blue-600 flex items-center justify-center transition-colors">
                                 <svg class="w-3.5 h-3.5 text-white opacity-0 group-has-[:checked]:opacity-100 scale-50 group-has-[:checked]:scale-100 transition-all duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3.5">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                                 </svg>
                             </div>
-                            <span class="font-medium text-sm leading-snug"><?php echo htmlspecialchars($service); ?></span>
+                            <span class="font-medium text-sm leading-snug"><?php echo htmlspecialchars($ls['service_name']); ?></span>
                         </div>
                     </label>
                     <?php endforeach; ?>
@@ -195,16 +168,16 @@ $form_data = [
             </div>
             
             <div class="space-y-8">
-                <?php foreach ($form_data['feedback_statements'] as $key => $statement): ?>
+                <?php foreach ($questions as $q): ?>
                 <fieldset class="bg-white border border-gray-100 shadow-sm rounded-2xl p-5 sm:p-6 relative group overflow-hidden">
                     <div class="absolute left-0 top-0 bottom-0 w-1 bg-gray-200 group-hover:bg-blue-400 transition-colors"></div>
-                    <legend class="text-base font-semibold text-gray-800 mb-5 pl-2 leading-relaxed"><?php echo htmlspecialchars($statement); ?></legend>
+                    <legend class="text-base font-semibold text-gray-800 mb-5 pl-2 leading-relaxed"><?php echo htmlspecialchars($q['question_text']); ?></legend>
                     
                     <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                        <?php foreach ($form_data['likert_options'] as $value => $label): ?>
+                        <?php foreach ($likert_options as $value => $label): ?>
                         <label class="block cursor-pointer relative h-full">
                             <div class="flex flex-col items-center justify-center py-3 px-2 rounded-xl border border-gray-200 bg-gray-50/50 text-gray-500 has-[:checked]:bg-blue-600 has-[:checked]:border-blue-600 has-[:checked]:text-white hover:bg-gray-100 hover:border-gray-300 transition-all text-center h-full shadow-sm element-press">
-                                <input type="radio" name="feedback[<?php echo htmlspecialchars($key); ?>]" value="<?php echo htmlspecialchars($value); ?>" class="sr-only" required>
+                                <input type="radio" name="feedback[<?php echo $q['question_id']; ?>]" value="<?php echo htmlspecialchars($value); ?>" class="sr-only" required>
                                 <span class="font-black text-xl mb-1"><?php echo htmlspecialchars($value); ?></span>
                                 <span class="text-[0.65rem] sm:text-xs font-semibold uppercase tracking-wider leading-tight text-center px-1"><?php echo htmlspecialchars($label); ?></span>
                             </div>
@@ -226,30 +199,16 @@ $form_data = [
             <div class="bg-gray-50/50 rounded-2xl p-6 border border-gray-100">
                 <label class="block text-base font-bold text-gray-800 mb-4 px-1">Are you satisfied with the library service you have received?</label>
                 <div class="grid grid-cols-2 gap-4 max-w-md mx-auto sm:mx-0">
-                    <?php foreach ($form_data['satisfaction_options'] as $option): ?>
+                    <?php foreach ($satisfaction_options as $label => $val): ?>
                     <label class="block cursor-pointer relative h-full">
                         <div class="flex items-center justify-center px-6 py-4 rounded-xl border-2 border-gray-200 bg-white text-gray-600 has-[:checked]:bg-blue-600 has-[:checked]:border-blue-600 has-[:checked]:text-white hover:border-gray-300 hover:bg-gray-50 transition-all font-bold text-lg shadow-sm element-press">
-                            <input type="radio" name="satisfied" value="<?php echo htmlspecialchars($option); ?>" class="sr-only" required>
-                            <?php if($option == 'Yes'): ?>
+                            <input type="radio" name="is_satisfied" value="<?php echo htmlspecialchars($val); ?>" class="sr-only" required>
+                            <?php if($label == 'Yes'): ?>
                                 <svg class="w-5 h-5 mr-2 opacity-70" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
                             <?php else: ?>
                                 <svg class="w-5 h-5 mr-2 opacity-70" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
                             <?php endif; ?>
-                            <?php echo htmlspecialchars($option); ?>
-                        </div>
-                    </label>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-base font-bold text-gray-800 mb-4 px-1">Overall, how would you rate the library service/s we provide?</label>
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                    <?php foreach ($form_data['rating_options'] as $option): ?>
-                    <label class="block cursor-pointer relative h-full">
-                        <div class="h-full flex items-center justify-center text-center px-2 py-4 rounded-xl border-2 border-gray-100 bg-gray-50 text-gray-700 has-[:checked]:bg-blue-600 has-[:checked]:border-blue-600 has-[:checked]:text-white hover:border-gray-300 transition-all font-semibold text-sm shadow-sm element-press">
-                            <input type="radio" name="overall_rating" value="<?php echo htmlspecialchars($option); ?>" class="sr-only" required>
-                            <?php echo htmlspecialchars($option); ?>
+                            <?php echo htmlspecialchars($label); ?>
                         </div>
                     </label>
                     <?php endforeach; ?>
@@ -296,46 +255,13 @@ $form_data = [
 </div>
 
 <style>
-    /* Custom utility for active press state on labels */
-    .element-press:active > div {
-        transform: scale(0.98);
-    }
-    
-    /* Make the svg checkmark match the color of the text for un-checked state */
-    input.peer:not(:checked) ~ div .opacity-0 {
-        /* hide it entirely, managed by tailwind classes */
-    }
-    
-    /* Shimmer animation keyframes for the button */
-    @keyframes shimmer {
-        100% {
-            transform: translateX(100%);
-        }
-    }
+    .element-press:active > div { transform: scale(0.98); }
+    input.peer:not(:checked) ~ div .opacity-0 { }
+    @keyframes shimmer { 100% { transform: translateX(100%); } }
 </style>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // Toggle "Other" input field for role
-        const roleRadios = document.querySelectorAll('input[name="role"]');
-        const roleOtherContainer = document.getElementById('role_other_container');
-        const roleOtherInput = document.getElementById('role_other');
-        
-        roleRadios.forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                if(e.target.value === 'Other') {
-                    roleOtherContainer.classList.remove('hidden');
-                    roleOtherInput.setAttribute('required', 'required');
-                    // Add slight delay to focus for smooth transition
-                    setTimeout(() => roleOtherInput.focus(), 50);
-                } else {
-                    roleOtherContainer.classList.add('hidden');
-                    roleOtherInput.removeAttribute('required');
-                }
-            });
-        });
-
-        // Checkbox validation - at least one service must be selected
         const form = document.querySelector('form');
         form.addEventListener('submit', function(e) {
             const checkboxes = document.querySelectorAll('input.service-checkbox');
@@ -344,79 +270,41 @@ $form_data = [
             if(!isChecked) {
                 e.preventDefault();
                 alert('Please select at least one service you availed from the Library.');
-                
-                // Scroll to the services section so user can see what they missed
-                document.getElementById('services_container').scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'center'
-                });
-                
-                // Add a temporary highlight effect
+                document.getElementById('services_container').scrollIntoView({ behavior: 'smooth', block: 'center' });
                 const container = document.getElementById('services_container');
                 container.classList.add('ring-2', 'ring-red-500', 'ring-offset-4', 'rounded-xl');
-                setTimeout(() => {
-                    container.classList.remove('ring-2', 'ring-red-500', 'ring-offset-4', 'rounded-xl');
-                }, 2000);
+                setTimeout(() => container.classList.remove('ring-2', 'ring-red-500', 'ring-offset-4', 'rounded-xl'), 2000);
             }
         });
 
-        // Set default date to today for convenience, while allowing override
         const dateInput = document.getElementById('date');
-        if(!dateInput.value) {
-            dateInput.valueAsDate = new Date();
-        }
+        if(!dateInput.value) { dateInput.valueAsDate = new Date(); }
 
         // Cascading dropdown logic for College and Department
-        const collegeData = {
-            "Integrated School (IS)": ["Pre-Kinder", "Kindergarten", "Grade School", "Junior High School", "Senior High School"],
-            "College of Allied Medical Professions (CAMP)": ["BS Medical Technology", "BS Occupational Therapy", "BS Pharmacy", "BS Clinical Pharmacy", "BS Radiologic Technology", "BS Physical Therapy", "BS Physical Therapy Professional Enhancement Program"],
-            "College of Arts and Sciences (CAS)": ["AB Communication", "BS Biology", "BS Biology Three-Year Accelerated Program", "BS Psychology", "AB Psychology", "BS in Human Biology", "Straight AB Psychology - MA Psychology Program"],
-            "College of Business and Accountancy (CBA)": ["BS Accountancy", "BS Management Accounting", "BS Business Administration", "BS Hospitality Management", "BS Tourism Management"],
-            "College of Computer Studies (CCS)": ["Bachelor of Multimedia Arts", "BS Computer Science", "BS Information Technology"],
-            "College of Criminal Justice Education (CCJE)": ["BS Criminology"],
-            "College of Engineering and Architecture (CEA)": ["BS Architecture", "BS Civil Engineering", "BS Computer Engineering", "BS Electronics Engineering"],
-            "College of Education (CED)": ["Bachelor of Elementary Education", "Bachelor of Secondary Education", "Bachelor of Early Childhood Education", "Bachelor of Special Needs Education", "Professional Certificate Course in Teaching"],
-            "College of Nursing (CON)": ["BS Nursing"],
-            "School of Law (SOL)": ["Juris Doctor", "Other"],
-            "School of Medicine (SOM)": ["Doctor of Medicine", "Other"],
-            "Graduate School (GS)": ["Education Programs", "Psychology Program", "Business Programs", "Information Technology Programs", "Public Health Programs", "Medical Laboratory Science Programs", "Nursing Programs", "Criminal Justice Program", "Other"]
-        };
+        const deptMapping = <?php echo $dept_json; ?>;
 
-        const collegeSelect = document.getElementById('college');
-        const departmentSelect = document.getElementById('department');
-        const departmentOtherInput = document.getElementById('department_other');
+        const collegeSelect = document.getElementById('college_id');
+        const departmentContainer = document.getElementById('department_container');
+        const departmentSelect = document.getElementById('acad_dept_id');
 
         collegeSelect.addEventListener('change', function() {
-            const selectedCollege = this.value;
+            const collegeId = this.value;
             
             departmentSelect.innerHTML = '<option value="" disabled selected>Select a Department</option>';
-            
-            departmentOtherInput.style.display = 'none';
-            departmentOtherInput.value = '';
-            departmentOtherInput.removeAttribute('required');
 
-            if (selectedCollege && collegeData[selectedCollege]) {
-                departmentSelect.removeAttribute('disabled');
+            if (collegeId && deptMapping[collegeId]) {
+                departmentContainer.style.display = 'block';
+                departmentSelect.setAttribute('required', 'required');
                 
-                collegeData[selectedCollege].forEach(function(dept) {
+                deptMapping[collegeId].forEach(function(dept) {
                     const option = document.createElement('option');
-                    option.value = dept;
-                    option.textContent = dept;
+                    option.value = dept.id;
+                    option.textContent = dept.name;
                     departmentSelect.appendChild(option);
                 });
             } else {
-                departmentSelect.setAttribute('disabled', 'disabled');
-            }
-        });
-
-        departmentSelect.addEventListener('change', function() {
-            if (this.value === 'Other') {
-                departmentOtherInput.style.display = 'block';
-                departmentOtherInput.setAttribute('required', 'required');
-            } else {
-                departmentOtherInput.style.display = 'none';
-                departmentOtherInput.value = '';
-                departmentOtherInput.removeAttribute('required');
+                departmentContainer.style.display = 'none';
+                departmentSelect.removeAttribute('required');
             }
         });
     });

@@ -51,8 +51,6 @@ try {
     $_SESSION['admin_logged_in'] = true;
     $_SESSION['admin_id'] = $user['admin_id'];
     $_SESSION['username'] = $user['username'];
-    $_SESSION['department_id'] = $user['department_id']; // Will be NULL for Super Admins
-    $_SESSION['is_superadmin'] = $user['is_superadmin'];
 
     // 8. Update their Last Login Timestamp
     $update_stmt = $pdo->prepare("UPDATE admin_user SET last_login = NOW() WHERE admin_id = ?");

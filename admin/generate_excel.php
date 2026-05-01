@@ -43,7 +43,7 @@ try {
     // 3. THE 3NF PIVOT QUERY (Flattens the DB back into a CSV-like structure)
     $query = "
         SELECT 
-            d.department_name,
+            ld.dept_name as department_name,
             ss.is_satisfied,
             ss.overall_rating,
             ss.recommendations,
@@ -53,20 +53,19 @@ try {
             MAX(CASE WHEN rd.question_id = 3 THEN rd.score END) AS q3,
             MAX(CASE WHEN rd.question_id = 4 THEN rd.score END) AS q4
         FROM survey_submission ss
-        JOIN department d ON ss.department_id = d.department_id
+        JOIN library_department ld ON ss.lib_dept_id = ld.lib_dept_id
         JOIN evaluation_period ep ON ss.period_id = ep.period_id
         LEFT JOIN response_detail rd ON ss.submission_id = rd.submission_id
         WHERE 
-            STR_TO_DATE(CONCAT('1 ', ep.eval_month, ' ', ep.eval_year), '%d %M %Y') 
-            BETWEEN 
-            STR_TO_DATE(CONCAT('1 ', ?, ' ', ?), '%d %M %Y') 
-            AND 
-            LAST_DAY(STR_TO_DATE(CONCAT('1 ', ?, ' ', ?), '%d %M %Y'))
+            ep.start_date >= ? 
+            AND ep.end_date <= ?
         GROUP BY ss.submission_id
     ";
 
     $stmt = $pdo->prepare($query);
-    $stmt->execute([$start_month, $start_year, $end_month, $end_year]);
+    $start_date = date('Y-m-01', $startTS);
+    $end_date = date('Y-m-t', $endTS);
+    $stmt->execute([$start_date, $end_date]);
     $raw_submissions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // 4. INITIALIZE YOUR LEGACY BUCKETS
@@ -120,17 +119,18 @@ try {
         if ($row['q4'] && isset($scoreMap[$row['q4']]))
             $stats[$dept]['q4'][$scoreMap[$row['q4']]]++;
 
-        $sat = trim($row['is_satisfied']);
-        if (strcasecmp($sat, 'Yes') == 0)
+        $sat = (int)$row['is_satisfied'];
+        if ($sat === 1)
             $stats[$dept]['sat']['Yes']++;
-        elseif (strcasecmp($sat, 'No') == 0)
+        else
             $stats[$dept]['sat']['No']++;
 
-        $overall = trim($row['overall_rating']);
-        foreach ($stats[$dept]['overall'] as $key => $val) {
-            if (strcasecmp($overall, $key) == 0)
-                $stats[$dept]['overall'][$key]++;
-        }
+        $overall_map = [5 => 'Excellent', 4 => 'Very Good', 3 => 'Good', 2 => 'Fair', 1 => 'Needs Improvement', 0 => 'Needs Improvement'];
+        $rounded = (int)round((float)$row['overall_rating']);
+        if ($rounded > 5) $rounded = 5;
+        $mapped_overall = $overall_map[$rounded] ?? 'Fair';
+        
+        $stats[$dept]['overall'][$mapped_overall]++;
 
         if (!empty($row['recommendations'])) {
             $stats[$dept]['recoms'][] = $row['recommendations'];

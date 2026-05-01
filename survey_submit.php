@@ -1,7 +1,7 @@
 <?php
 /**
  * survey_submit.php
- * Normalized 3NF Architecture (Parent -> Child Insertions)
+ * Normalized 3NF Architecture
  */
 
 require_once 'db_connect.php';
@@ -15,85 +15,91 @@ try {
     // 1. ALL-OR-NOTHING TRANSACTION
     $pdo->beginTransaction();
 
-    // 2. Fetch Active Period
+    // 2. Resolve Evaluation Period (Find or Create)
     $submission_date = $_POST['date'] ?? date('Y-m-d');
-    $month_str = strtoupper(date('F', strtotime($submission_date)));
-    $year_int = (int)date('Y', strtotime($submission_date));
+    $timestamp = strtotime($submission_date);
+    $start_date = date('Y-m-01', $timestamp);
+    $end_date = date('Y-m-t', $timestamp);
 
-    $period_query = $pdo->prepare("SELECT period_id FROM evaluation_period WHERE eval_month = ? AND eval_year = ? LIMIT 1");
-    $period_query->execute([$month_str, $year_int]);
+    $period_query = $pdo->prepare("SELECT period_id FROM evaluation_period WHERE start_date = ? AND end_date = ? LIMIT 1");
+    $period_query->execute([$start_date, $end_date]);
     $period = $period_query->fetch();
 
-    if (!$period) {
-        throw new Exception("Evaluation period for $month_str $year_int is not active.");
+    if ($period) {
+        $period_id = $period['period_id'];
+    } else {
+        $insert_period = $pdo->prepare("INSERT INTO evaluation_period (start_date, end_date, is_processed) VALUES (?, ?, 0)");
+        $insert_period->execute([$start_date, $end_date]);
+        $period_id = $pdo->lastInsertId();
     }
-    $period_id = $period['period_id'];
 
-    // 3. Prepare Parent Data (Demographics & Text)
+    // 3. Extract Demographics & Inputs
     $email = filter_var($_POST['email'] ?? '', FILTER_SANITIZE_EMAIL);
-    $department_id = (int)($_POST['department_id'] ?? 0);
-    $role = $_POST['role'] ?? '';
-    $college = $_POST['college'] ?? '';
-    $academic_department = $_POST['academic_department'] ?? '';
+    $lib_dept_id = (int)($_POST['lib_dept_id'] ?? 0);
+    $patron_type_id = (int)($_POST['patron_type_id'] ?? 0);
     
-    $services_raw = $_POST['services'] ?? [];
-    $services_availed = is_array($services_raw) ? implode(', ', array_map('htmlspecialchars', $services_raw)) : '';
-    
-    $is_satisfied = $_POST['satisfied'] ?? '';
-    $overall_rating = $_POST['overall_rating'] ?? '';
+    // College might be omitted (e.g. for NTPs)
+    $college_id = !empty($_POST['college_id']) ? (int)$_POST['college_id'] : null;
+    $acad_dept_id = !empty($_POST['acad_dept_id']) ? (int)$_POST['acad_dept_id'] : null;
+
+    $is_satisfied = (int)($_POST['is_satisfied'] ?? 0);
     $recommendations = htmlspecialchars($_POST['recommendations'] ?? '');
     $comments = htmlspecialchars($_POST['comments'] ?? '');
 
-    // 4. Insert PARENT Record (`survey_submission`)
+    // 4. Calculate Overall Rating from Feedback Array
+    $feedback = $_POST['feedback'] ?? [];
+    if (empty($feedback)) {
+        throw new Exception("No feedback scores submitted.");
+    }
+    
+    $total_score = 0;
+    $question_count = count($feedback);
+    foreach ($feedback as $question_id => $score) {
+        $total_score += (int)$score;
+    }
+    $overall_rating = round($total_score / $question_count, 2);
+    $created_at = date('Y-m-d H:i:s', $timestamp); // Or use current timestamp
+
+    // 5. Insert PARENT Record (`survey_submission`)
     $stmt = $pdo->prepare("
         INSERT INTO survey_submission (
-            period_id, department_id, email, submission_date, role, college, 
-            academic_department, services_availed, is_satisfied, overall_rating, 
-            recommendations, comments
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            period_id, lib_dept_id, patron_type_id, college_id, acad_dept_id, email, 
+            is_satisfied, overall_rating, recommendations, comments, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     $stmt->execute([
-        $period_id, $department_id, $email, $submission_date, $role, $college,
-        $academic_department, $services_availed, $is_satisfied, $overall_rating,
-        $recommendations, $comments
+        $period_id, $lib_dept_id, $patron_type_id, $college_id, $acad_dept_id, $email,
+        $is_satisfied, $overall_rating, $recommendations, $comments, $created_at
     ]);
 
-    $submission_id = $pdo->lastInsertId(); // Capture the new ID!
+    $submission_id = $pdo->lastInsertId();
 
-    // 5. Insert CHILD Records (`response_detail`)
-    // Map the HTML form input names to the Database question_id
-    $question_map = [
-        'resources' => 1,
-        'staff_assistance' => 2,
-        'process' => 3,
-        'procedures' => 4
-    ];
-
-    $detail_stmt = $pdo->prepare("INSERT INTO response_detail (submission_id, question_id, score) VALUES (?, ?, ?)");
-
-    $feedback = $_POST['feedback'] ?? [];
-    foreach ($question_map as $html_key => $db_question_id) {
-        // If they skipped a question, default to 0, though HTML5 validation should catch it
-        $score = isset($feedback[$html_key]) ? (int)$feedback[$html_key] : 0; 
-        
-        $detail_stmt->execute([$submission_id, $db_question_id, $score]);
+    // 6. Insert Junction Records (`submission_service`)
+    $services = $_POST['services'] ?? [];
+    if (!empty($services)) {
+        $service_stmt = $pdo->prepare("INSERT INTO submission_service (submission_id, service_id) VALUES (?, ?)");
+        foreach ($services as $service_id) {
+            $service_stmt->execute([$submission_id, (int)$service_id]);
+        }
     }
 
-    // 6. Success! Commit everything to the database.
+    // 7. Insert CHILD Records (`response_detail`)
+    $detail_stmt = $pdo->prepare("INSERT INTO response_detail (submission_id, question_id, score) VALUES (?, ?, ?)");
+    foreach ($feedback as $question_id => $score) {
+        $detail_stmt->execute([$submission_id, (int)$question_id, (int)$score]);
+    }
+
+    // 8. Success! Commit everything to the database.
     $pdo->commit();
     header("Location: thank_you.php?status=success");
     exit;
 
 } catch (Exception $e) {
-    // 7. Disaster Recovery
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
     
     error_log("Survey Submission Error: " . $e->getMessage());
-    // TEMPORARY DEBUGGING: Uncomment below to see the error on screen
-    // die("Database Error: " . $e->getMessage());
-
     header("Location: survey.php?error=submission_failed");
     exit;
 }
