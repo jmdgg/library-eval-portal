@@ -30,8 +30,8 @@ try {
 
     $pdo->beginTransaction();
 
-    // 1. Seed Patron Types (Student first)
-    $roles = ['Student', 'Faculty', 'NTP', 'Alumni', 'Other Researcher'];
+    // 1. Seed Patron Types
+    $roles = ['Student', 'Faculty', 'NTP', 'Alumni', 'Other Researcher', 'Other'];
     $roleIds = [];
     $stmt = $pdo->prepare("INSERT INTO patron_type (type_name) VALUES (?)");
     foreach ($roles as $r) { $stmt->execute([$r]); $roleIds[] = $pdo->lastInsertId(); }
@@ -95,7 +95,7 @@ try {
         'Similarity Scanning Service (Turnitin)',
         'Login Credentials (user name and password)',
         'Book Recommendation for Purchase',
-        'Others'
+        'Other'
     ];
     $serviceIds = [];
     $stmt = $pdo->prepare("INSERT INTO library_service (service_name) VALUES (?)");
@@ -115,11 +115,11 @@ try {
     // 6. Insertion Preparation
     $parent_stmt = $pdo->prepare("
         INSERT INTO survey_submission 
-        (period_id, lib_dept_id, patron_type_id, college_id, acad_dept_id, email, is_satisfied, overall_rating, recommendations, comments, created_at) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (period_id, lib_dept_id, patron_type_id, other_patron_details, college_id, acad_dept_id, email, is_satisfied, overall_rating, recommendations, comments, created_at) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     $child_stmt = $pdo->prepare("INSERT INTO response_detail (submission_id, question_id, score) VALUES (?, ?, ?)");
-    $junction_stmt = $pdo->prepare("INSERT INTO submission_service (submission_id, service_id) VALUES (?, ?)");
+    $junction_stmt = $pdo->prepare("INSERT INTO submission_service (submission_id, service_id, other_service_details) VALUES (?, ?, ?)");
 
     // Helper: Find or Create Evaluation Period
     function getPeriodId($pdo, $timestamp) {
@@ -147,6 +147,8 @@ try {
         $dept_id = $libDeptIds[array_rand($libDeptIds)];
         $role_id = $roleIds[array_rand($roleIds)];
         
+        $other_patron = ($roles[array_search($role_id, $roleIds)] === 'Other') ? 'External Researcher' : null;
+
         // NTPs might have NULL college
         $college_id = ($role_id == $roleIds[2]) ? null : $collegeIds[array_rand($collegeIds)];
         $acad_dept_id = ($college_id && isset($acadDeptIds[$college_id])) ? $acadDeptIds[$college_id][array_rand($acadDeptIds[$college_id])] : null;
@@ -163,7 +165,7 @@ try {
         $overall = round(array_sum($scores) / count($scores), 2);
 
         $parent_stmt->execute([
-            $period_id, $dept_id, $role_id, $college_id, $acad_dept_id, $email, $is_sat, $overall, '', $comment, $created_at
+            $period_id, $dept_id, $role_id, $other_patron, $college_id, $acad_dept_id, $email, $is_sat, $overall, '', $comment, $created_at
         ]);
         $submission_id = $pdo->lastInsertId();
 
@@ -178,12 +180,13 @@ try {
         shuffle($shuffled_services);
         $selected_services = array_slice($shuffled_services, 0, $num_services);
         foreach ($selected_services as $sId) {
-            $junction_stmt->execute([$submission_id, $sId]);
+            $other_detail = ($services[array_search($sId, $serviceIds)] === 'Other') ? 'Special Request' : null;
+            $junction_stmt->execute([$submission_id, $sId, $other_detail]);
         }
     }
 
     $pdo->commit();
-    echo "<p style='color:green; font-weight:bold;'>Successfully seeded {$recordsToGenerate} 3NF-compliant records with full original names!</p>";
+    echo "<p style='color:green; font-weight:bold;'>Successfully seeded {$recordsToGenerate} records with 'Other' specify logic!</p>";
 
 } catch (Exception $e) {
     if ($pdo->inTransaction()) { $pdo->rollBack(); }
