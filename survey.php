@@ -105,12 +105,13 @@ $satisfaction_options = ['Yes' => 1, 'No' => 0]; // For DB mapping
                     <?php foreach ($patron_types as $pt): ?>
                     <label class="block cursor-pointer relative h-full">
                         <div class="w-full h-full flex items-center justify-center text-center px-4 py-3.5 rounded-xl border-2 border-gray-100 bg-gray-50 text-gray-600 has-[:checked]:bg-blue-50 has-[:checked]:border-blue-600 has-[:checked]:text-blue-700 hover:border-blue-300 hover:bg-blue-50/50 transition-all font-medium text-sm shadow-sm element-press">
-                            <input type="radio" name="patron_type_id" value="<?php echo $pt['patron_type_id']; ?>" class="sr-only" required>
+                            <input type="radio" name="patron_type_id" value="<?php echo $pt['patron_type_id']; ?>" data-name="<?php echo htmlspecialchars($pt['type_name']); ?>" class="sr-only patron-radio" required>
                             <?php echo htmlspecialchars($pt['type_name']); ?>
                         </div>
                     </label>
                     <?php endforeach; ?>
                 </div>
+                <input type="text" name="other_patron_details" id="other_patron_details" class="w-full mt-4 rounded-xl border-gray-200 border bg-gray-50 p-3.5 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-200" placeholder="Please specify your role..." style="display: none;">
             </div>
         </section>
 
@@ -146,7 +147,7 @@ $satisfaction_options = ['Yes' => 1, 'No' => 0]; // For DB mapping
                     <?php foreach ($library_services as $ls): ?>
                     <label class="block cursor-pointer relative h-full group">
                         <div class="h-full flex items-start p-4 rounded-xl border-2 border-gray-100 bg-gray-50 text-gray-600 has-[:checked]:bg-blue-50 has-[:checked]:border-blue-600 has-[:checked]:text-blue-800 hover:border-blue-300 hover:bg-blue-50/50 transition-all shadow-sm">
-                            <input type="checkbox" name="services[]" value="<?php echo $ls['service_id']; ?>" class="sr-only service-checkbox">
+                            <input type="checkbox" name="services[]" value="<?php echo $ls['service_id']; ?>" data-name="<?php echo htmlspecialchars($ls['service_name']); ?>" class="sr-only service-checkbox">
                             <div class="flex-shrink-0 mt-0.5 mr-3 w-5 h-5 rounded border-2 border-gray-300 group-has-[:checked]:bg-blue-600 group-has-[:checked]:border-blue-600 flex items-center justify-center transition-colors">
                                 <svg class="w-3.5 h-3.5 text-white opacity-0 group-has-[:checked]:opacity-100 scale-50 group-has-[:checked]:scale-100 transition-all duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3.5">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
@@ -157,6 +158,7 @@ $satisfaction_options = ['Yes' => 1, 'No' => 0]; // For DB mapping
                     </label>
                     <?php endforeach; ?>
                 </div>
+                <input type="text" name="other_service_details" id="other_service_details" class="w-full mt-4 rounded-xl border-gray-200 border bg-gray-50 p-3.5 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-200" placeholder="Please specify the service..." style="display: none;">
             </div>
         </section>
 
@@ -306,6 +308,46 @@ $satisfaction_options = ['Yes' => 1, 'No' => 0]; // For DB mapping
                 departmentContainer.style.display = 'none';
                 departmentSelect.removeAttribute('required');
             }
+        });
+
+        // Other Role Conditional Reveal
+        const roleRadios = document.querySelectorAll('.patron-radio');
+        const otherPatronInput = document.getElementById('other_patron_details');
+        
+        roleRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.getAttribute('data-name') === 'Other') {
+                    otherPatronInput.style.display = 'block';
+                    otherPatronInput.setAttribute('required', 'required');
+                } else {
+                    otherPatronInput.style.display = 'none';
+                    otherPatronInput.value = '';
+                    otherPatronInput.removeAttribute('required');
+                }
+            });
+        });
+
+        // Other Service Conditional Reveal
+        const serviceCheckboxes = document.querySelectorAll('.service-checkbox');
+        const otherServiceInput = document.getElementById('other_service_details');
+
+        function updateServiceOtherVisibility() {
+            let otherChecked = Array.from(serviceCheckboxes).some(cb => 
+                cb.checked && cb.getAttribute('data-name') === 'Other'
+            );
+            
+            if (otherChecked) {
+                otherServiceInput.style.display = 'block';
+                otherServiceInput.setAttribute('required', 'required');
+            } else {
+                otherServiceInput.style.display = 'none';
+                otherServiceInput.value = '';
+                otherServiceInput.removeAttribute('required');
+            }
+        }
+
+        serviceCheckboxes.forEach(cb => {
+            cb.addEventListener('change', updateServiceOtherVisibility);
         });
     });
 </script>

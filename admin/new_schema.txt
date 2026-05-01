@@ -120,6 +120,7 @@ CREATE TABLE `survey_submission` (
   `period_id` int(11) NOT NULL,
   `lib_dept_id` int(11) NOT NULL,
   `patron_type_id` int(11) NOT NULL,
+  `other_patron_details` varchar(255) DEFAULT NULL,
   `college_id` int(11) DEFAULT NULL, -- Nullable for NTPs
   `acad_dept_id` int(11) DEFAULT NULL,
   `email` varchar(255) NOT NULL,
@@ -146,6 +147,7 @@ CREATE TABLE `survey_submission` (
 CREATE TABLE `submission_service` (
   `submission_id` int(11) NOT NULL,
   `service_id` int(11) NOT NULL,
+  `other_service_details` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`submission_id`, `service_id`),
   KEY `idx_service` (`service_id`),
   CONSTRAINT `fk_junction_sub` FOREIGN KEY (`submission_id`) REFERENCES `survey_submission` (`submission_id`) ON DELETE CASCADE,

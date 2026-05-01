@@ -29,11 +29,9 @@ try {
             al.action_details,
             al.ip_address,
             al.created_at,
-            au.username,
-            d.department_name
+            au.username
         FROM audit_log al
         JOIN admin_user au ON al.admin_id = au.admin_id
-        LEFT JOIN department d ON au.department_id = d.department_id
         ORDER BY al.created_at DESC
         LIMIT 100
     ";
@@ -149,8 +147,8 @@ try {
                                                 <div>
                                                     <p class="text-sm font-bold text-slate-800">
                                                         <?php echo htmlspecialchars($log['username']); ?></p>
-                                                    <p class="text-xs text-slate-500 font-medium">
-                                                        <?php echo $log['department_name'] ? htmlspecialchars($log['department_name']) : 'Super Administrator'; ?>
+                                                    <p class="text-xs text-slate-500 font-medium italic">
+                                                        System Administrator
                                                     </p>
                                                 </div>
                                             </div>
