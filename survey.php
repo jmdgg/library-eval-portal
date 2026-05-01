@@ -171,11 +171,11 @@ $satisfaction_options = ['Yes' => 1, 'No' => 0]; // For DB mapping
             
             <?php
             $likert_colors = [
-                '5' => 'border-emerald-200 bg-emerald-50/50 text-emerald-700 has-[:checked]:bg-emerald-600 has-[:checked]:border-emerald-600 has-[:checked]:text-white hover:bg-emerald-100 hover:border-emerald-300',
-                '4' => 'border-teal-200 bg-teal-50/50 text-teal-700 has-[:checked]:bg-teal-500 has-[:checked]:border-teal-500 has-[:checked]:text-white hover:bg-teal-100 hover:border-teal-300',
-                '3' => 'border-slate-200 bg-slate-50/50 text-slate-600 has-[:checked]:bg-slate-500 has-[:checked]:border-slate-500 has-[:checked]:text-white hover:bg-slate-100 hover:border-slate-300',
-                '2' => 'border-orange-200 bg-orange-50/50 text-orange-700 has-[:checked]:bg-orange-500 has-[:checked]:border-orange-500 has-[:checked]:text-white hover:bg-orange-100 hover:border-orange-300',
-                '1' => 'border-rose-200 bg-rose-50/50 text-rose-700 has-[:checked]:bg-rose-600 has-[:checked]:border-rose-600 has-[:checked]:text-white hover:bg-rose-100 hover:border-rose-300'
+                '5' => 'border-emerald-200 bg-emerald-50/50 text-gray-900 has-[:checked]:bg-emerald-600 has-[:checked]:border-emerald-600 has-[:checked]:text-white hover:bg-emerald-100 hover:border-emerald-300',
+                '4' => 'border-lime-200 bg-lime-50/50 text-gray-900 has-[:checked]:bg-lime-500 has-[:checked]:border-lime-500 has-[:checked]:text-white hover:bg-lime-100 hover:border-lime-300',
+                '3' => 'border-amber-200 bg-amber-50/50 text-gray-900 has-[:checked]:bg-amber-400 has-[:checked]:border-amber-400 has-[:checked]:text-white hover:bg-amber-100 hover:border-amber-300',
+                '2' => 'border-orange-200 bg-orange-50/50 text-gray-900 has-[:checked]:bg-orange-500 has-[:checked]:border-orange-500 has-[:checked]:text-white hover:bg-orange-100 hover:border-orange-300',
+                '1' => 'border-red-200 bg-red-50/50 text-gray-900 has-[:checked]:bg-red-600 has-[:checked]:border-red-600 has-[:checked]:text-white hover:bg-red-100 hover:border-red-300'
             ];
             ?>
 
@@ -188,7 +188,7 @@ $satisfaction_options = ['Yes' => 1, 'No' => 0]; // For DB mapping
                     <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
                         <?php foreach ($likert_options as $value => $label): ?>
                         <label class="block cursor-pointer relative h-full">
-                            <div class="flex flex-col items-center justify-center py-3 px-2 rounded-xl border transition-all text-center h-full shadow-sm element-press <?php echo isset($rating_colors[$value]) ? $rating_colors[$value] : 'border-gray-200 bg-gray-50/50 text-gray-500 has-[:checked]:bg-blue-600 has-[:checked]:border-blue-600 has-[:checked]:text-white hover:bg-gray-100 hover:border-gray-300'; ?>">
+                            <div class="flex flex-col items-center justify-center py-3 px-2 rounded-xl border transition-all text-center h-full shadow-sm element-press <?php echo isset($likert_colors[$value]) ? $likert_colors[$value] : 'border-gray-200 bg-gray-50/50 text-gray-500 has-[:checked]:bg-blue-600 has-[:checked]:border-blue-600 has-[:checked]:text-white hover:bg-gray-100 hover:border-gray-300'; ?>">
                                 <input type="radio" name="feedback[<?php echo $q['question_id']; ?>]" value="<?php echo htmlspecialchars($value); ?>" class="sr-only" required>
                                 <span class="font-black text-xl mb-1"><?php echo htmlspecialchars($value); ?></span>
                                 <span class="text-[0.65rem] sm:text-xs font-semibold uppercase tracking-wider leading-tight text-center px-1"><?php echo htmlspecialchars($label); ?></span>
@@ -211,9 +211,13 @@ $satisfaction_options = ['Yes' => 1, 'No' => 0]; // For DB mapping
             <div class="bg-gray-50/50 rounded-2xl p-6 border border-gray-100">
                 <label class="block text-base font-bold text-gray-800 mb-4 px-1">Are you satisfied with the library service you have received?</label>
                 <div class="grid grid-cols-2 gap-4 max-w-md mx-auto sm:mx-0">
-                    <?php foreach ($satisfaction_options as $label => $val): ?>
+                    <?php foreach ($satisfaction_options as $label => $val): 
+                        $sat_color = ($label == 'Yes') 
+                            ? 'has-[:checked]:bg-emerald-600 has-[:checked]:border-emerald-600 hover:border-emerald-300' 
+                            : 'has-[:checked]:bg-rose-600 has-[:checked]:border-rose-600 hover:border-rose-300';
+                    ?>
                     <label class="block cursor-pointer relative h-full">
-                        <div class="flex items-center justify-center px-6 py-4 rounded-xl border-2 border-gray-200 bg-white text-gray-600 has-[:checked]:bg-blue-600 has-[:checked]:border-blue-600 has-[:checked]:text-white hover:border-gray-300 hover:bg-gray-50 transition-all font-bold text-lg shadow-sm element-press">
+                        <div class="flex items-center justify-center px-6 py-4 rounded-xl border-2 border-gray-200 bg-white text-gray-900 has-[:checked]:text-white hover:bg-gray-50 transition-all font-bold text-lg shadow-sm element-press <?php echo $sat_color; ?>">
                             <input type="radio" name="is_satisfied" value="<?php echo htmlspecialchars($val); ?>" class="sr-only" required>
                             <?php if($label == 'Yes'): ?>
                                 <svg class="w-5 h-5 mr-2 opacity-70" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
