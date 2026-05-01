@@ -250,9 +250,9 @@ try {
 
                 <!-- Most Active College -->
                 <div id="kpiMostActive"
-                    class="bg-white rounded-2xl p-6 shadow-[0_2px_10px_rgb(0,0,0,0.02)] border border-slate-100 flex items-center gap-5 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-shadow cursor-pointer">
+                    class="bg-gradient-to-br from-amber-400 to-amber-500 rounded-2xl p-6 shadow-[0_2px_10px_rgba(245,158,11,0.2)] border border-amber-400 flex items-center gap-5 hover:shadow-[0_8px_30px_rgba(245,158,11,0.4)] transition-all cursor-pointer hover:-translate-y-1">
                     <div
-                        class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0">
+                        class="w-12 h-12 rounded-xl bg-white/20 text-white flex items-center justify-center flex-shrink-0">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4">
@@ -260,9 +260,9 @@ try {
                         </svg>
                     </div>
                     <div>
-                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Most Active College
+                        <p class="text-xs font-bold text-amber-50 uppercase tracking-wider mb-0.5">Most Active College
                         </p>
-                        <p class="text-lg font-extrabold text-slate-800 truncate w-32"
+                        <p class="text-base font-extrabold text-white leading-tight line-clamp-2"
                             title="<?php echo htmlspecialchars($mostActiveCollege); ?>">
                             <?php echo htmlspecialchars($mostActiveCollege); ?>
                         </p>
@@ -270,10 +270,10 @@ try {
                 </div>
 
                 <!-- Pending Flags/Reviews -->
-                <div
-                    class="bg-white rounded-2xl p-6 shadow-[0_2px_10px_rgb(0,0,0,0.02)] border border-slate-100 flex items-center gap-5 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-shadow">
+                <div onclick="window.location.href='feedback.php';"
+                    class="bg-gradient-to-br from-rose-400 to-rose-500 rounded-2xl p-6 shadow-[0_2px_10px_rgba(244,63,94,0.2)] border border-rose-400 flex items-center gap-5 hover:shadow-[0_8px_30px_rgba(244,63,94,0.4)] transition-all cursor-pointer hover:-translate-y-1">
                     <div
-                        class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center flex-shrink-0">
+                        class="w-12 h-12 rounded-xl bg-white/20 text-white flex items-center justify-center flex-shrink-0">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
@@ -281,8 +281,8 @@ try {
                         </svg>
                     </div>
                     <div>
-                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Pending Flags</p>
-                        <p class="text-2xl font-extrabold text-slate-800"><?php echo htmlspecialchars($pendingFlags); ?>
+                        <p class="text-xs font-bold text-rose-50 uppercase tracking-wider mb-0.5">Pending Flags</p>
+                        <p class="text-2xl font-extrabold text-white"><?php echo htmlspecialchars($pendingFlags); ?>
                         </p>
                     </div>
                 </div>
@@ -295,11 +295,26 @@ try {
                     class="bg-white p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 border-t-4 border-t-blue-500 relative overflow-hidden group lg:col-span-3 flex flex-col">
                     <div class="flex items-center justify-between mb-6">
                         <h3 class="text-lg font-extrabold text-slate-800 tracking-tight">Performance Trend</h3>
-                        <div
-                            class="bg-blue-50 text-blue-600 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider">
-                            Last 12 Months</div>
+                        <div class="flex gap-2">
+                            <select id="chartView" class="bg-white border border-slate-200 rounded-lg px-2 py-1 text-[10px] font-bold text-slate-700 shadow-sm outline-none focus:border-blue-500 transition-colors uppercase tracking-wider">
+                                <option value="yearly">Yearly Trend</option>
+                                <option value="monthly">Monthly Trend</option>
+                            </select>
+                            <select id="chartYear" class="bg-white border border-slate-200 rounded-lg px-2 py-1 text-[10px] font-bold text-slate-700 shadow-sm outline-none focus:border-blue-500 transition-colors uppercase tracking-wider">
+                                <!-- JS Populated -->
+                            </select>
+                            <select id="chartMonth" class="bg-white border border-slate-200 rounded-lg px-2 py-1 text-[10px] font-bold text-slate-700 shadow-sm outline-none focus:border-blue-500 transition-colors uppercase tracking-wider hidden">
+                                <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option>
+                                <option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option>
+                                <option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option>
+                                <option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="w-full h-80 relative flex-1">
+                        <div id="chartEmptyState" style="display:none; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); text-align:center; width: 100%;">
+                            <h4 class="text-slate-400 font-bold text-sm">No evaluations as of yet</h4>
+                        </div>
                         <canvas id="trendChart"></canvas>
                     </div>
                 </div>
@@ -530,15 +545,17 @@ try {
     </div>
 
     <script>
+        let trendChart;
+
         document.addEventListener('DOMContentLoaded', function () {
             const trendCtx = document.getElementById('trendChart').getContext('2d');
-            new Chart(trendCtx, {
+            trendChart = new Chart(trendCtx, {
                 type: 'line',
                 data: {
-                    labels: <?php echo json_encode($trendLabels); ?>,
+                    labels: [],
                     datasets: [{
                         label: 'Evaluations',
-                        data: <?php echo json_encode($trendCounts); ?>,
+                        data: [],
                         borderColor: '#3b82f6',
                         backgroundColor: 'rgba(59, 130, 246, 0.05)',
                         borderWidth: 3,
@@ -562,13 +579,69 @@ try {
                 }
             });
 
+            // Initialize Chart Controls
+            const chartView = document.getElementById('chartView');
+            const chartYear = document.getElementById('chartYear');
+            const chartMonth = document.getElementById('chartMonth');
+            
+            const currentYear = new Date().getFullYear();
+            for (let y = 2025; y <= currentYear; y++) {
+                const opt = document.createElement('option');
+                opt.value = y;
+                opt.textContent = y;
+                chartYear.appendChild(opt);
+            }
+            chartYear.value = currentYear;
+            chartMonth.value = new Date().getMonth() + 1;
+
+            function fetchChartData() {
+                const view = chartView.value;
+                const year = chartYear.value;
+                const month = chartMonth.value;
+
+                if (view === 'yearly') {
+                    chartMonth.classList.add('hidden');
+                } else {
+                    chartMonth.classList.remove('hidden');
+                }
+
+                fetch('api_chart_data.php?view=' + view + '&year=' + year + '&month=' + month)
+                    .then(res => res.json())
+                    .then(res => {
+                        const emptyState = document.getElementById('chartEmptyState');
+                        const canvas = document.getElementById('trendChart');
+                        
+                        const allZeros = res.data.length === 0 || res.data.every(val => val == 0);
+                        
+                        if (allZeros) {
+                            emptyState.style.display = 'block';
+                            canvas.style.display = 'none';
+                        } else {
+                            emptyState.style.display = 'none';
+                            canvas.style.display = 'block';
+                            trendChart.data.labels = res.labels;
+                            trendChart.data.datasets[0].data = res.data;
+                            trendChart.update();
+                        }
+                    })
+                    .catch(err => console.error('Error fetching chart data:', err));
+            }
+
+            chartView.addEventListener('change', fetchChartData);
+            chartYear.addEventListener('change', fetchChartData);
+            chartMonth.addEventListener('change', fetchChartData);
+
+            // Initial fetch
+            fetchChartData();
+
+            let demographicsChart;
             const demoCtx = document.getElementById('demoChart').getContext('2d');
-            new Chart(demoCtx, {
+            demographicsChart = new Chart(demoCtx, {
                 type: 'doughnut',
                 data: {
-                    labels: <?php echo json_encode($rolesLabels); ?>,
+                    labels: [],
                     datasets: [{
-                        data: <?php echo json_encode($rolesCounts); ?>,
+                        data: [],
                         backgroundColor: ['#6366f1', '#f59e0b', '#10b981', '#ec4899', '#8b5cf6', '#64748b'],
                         borderWidth: 2,
                         borderColor: '#ffffff',
@@ -581,9 +654,32 @@ try {
                     plugins: {
                         legend: { position: 'bottom', labels: { boxWidth: 10, padding: 15, font: { size: 11, weight: 'bold' } } }
                     },
-                    cutout: '75%'
+                    cutout: '75%',
+                    onClick: (event, elements, chart) => {
+                        if (elements[0]) {
+                            const index = elements[0].index;
+                            const label = chart.data.labels[index];
+                            window.location.href = 'respondents.php?filterType=' + encodeURIComponent(label);
+                        }
+                    },
+                    onHover: (event, chartElement) => {
+                        event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+                    }
                 }
             });
+
+            function fetchDemographicData() {
+                fetch('api_demographics.php')
+                    .then(res => res.json())
+                    .then(res => {
+                        demographicsChart.data.labels = res.labels;
+                        demographicsChart.data.datasets[0].data = res.data;
+                        demographicsChart.update();
+                    })
+                    .catch(err => console.error('Error fetching demographic data:', err));
+            }
+            
+            fetchDemographicData();
         });
 
         // Search and Modal Handlers
@@ -628,7 +724,7 @@ try {
             leadContent.innerHTML = sorted.map(([c, n]) => `
                 <div class="flex justify-between items-center p-4 bg-slate-50 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all">
                     <span class="font-bold text-slate-800">${c}</span>
-                    <span class="bg-blue-50 text-blue-600 text-[10px] font-bold px-3 py-1 rounded-full border border-blue-100">${n} Evaluations</span>
+                    <span class="bg-blue-50 text-blue-600 text-[10px] font-bold px-3 py-1 rounded-full border border-blue-100" style="white-space: nowrap;">${n} Evaluations</span>
                 </div>
             `).join('') || '<p class="text-center text-slate-400 py-6">No data available.</p>';
             leadModal.classList.remove('hidden');
