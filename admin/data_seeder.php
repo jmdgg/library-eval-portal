@@ -30,11 +30,14 @@ try {
 
     $pdo->beginTransaction();
 
-    // 1. Seed Patron Types
+    // 1. Seed Respondent Types
     $roles = ['Student', 'Faculty', 'NTP', 'Alumni', 'Other Researcher', 'Other'];
     $roleIds = [];
     $stmt = $pdo->prepare("INSERT INTO patron_type (type_name) VALUES (?)");
-    foreach ($roles as $r) { $stmt->execute([$r]); $roleIds[] = $pdo->lastInsertId(); }
+    foreach ($roles as $r) {
+        $stmt->execute([$r]);
+        $roleIds[] = $pdo->lastInsertId();
+    }
 
     // 2. Seed Colleges & Academic Departments
     $collegeDepts = [
@@ -63,7 +66,7 @@ try {
         $cId = $pdo->lastInsertId();
         $collegeIds[] = $cId;
         $acadDeptIds[$cId] = [];
-        
+
         foreach ($depts as $deptName) {
             $deptStmt->execute([$cId, $deptName]);
             $acadDeptIds[$cId][] = $pdo->lastInsertId();
@@ -82,7 +85,10 @@ try {
     ];
     $libDeptIds = [];
     $stmt = $pdo->prepare("INSERT INTO library_department (dept_name) VALUES (?)");
-    foreach ($libDepts as $d) { $stmt->execute([$d]); $libDeptIds[] = $pdo->lastInsertId(); }
+    foreach ($libDepts as $d) {
+        $stmt->execute([$d]);
+        $libDeptIds[] = $pdo->lastInsertId();
+    }
 
     // 4. Seed Library Services
     $services = [
@@ -99,7 +105,10 @@ try {
     ];
     $serviceIds = [];
     $stmt = $pdo->prepare("INSERT INTO library_service (service_name) VALUES (?)");
-    foreach ($services as $s) { $stmt->execute([$s]); $serviceIds[] = $pdo->lastInsertId(); }
+    foreach ($services as $s) {
+        $stmt->execute([$s]);
+        $serviceIds[] = $pdo->lastInsertId();
+    }
 
     // 5. Seed Question Metrics
     $questions = [
@@ -110,7 +119,10 @@ try {
     ];
     $qIds = [];
     $stmt = $pdo->prepare("INSERT INTO question_metric (category, question_text, max_score) VALUES (?, ?, ?)");
-    foreach ($questions as $q) { $stmt->execute($q); $qIds[] = $pdo->lastInsertId(); }
+    foreach ($questions as $q) {
+        $stmt->execute($q);
+        $qIds[] = $pdo->lastInsertId();
+    }
 
     // 6. Insertion Preparation
     $parent_stmt = $pdo->prepare("
@@ -122,14 +134,16 @@ try {
     $junction_stmt = $pdo->prepare("INSERT INTO submission_service (submission_id, service_id, other_service_details) VALUES (?, ?, ?)");
 
     // Helper: Find or Create Evaluation Period
-    function getPeriodId($pdo, $timestamp) {
+    function getPeriodId($pdo, $timestamp)
+    {
         $start_date = date('Y-m-01', $timestamp);
         $end_date = date('Y-m-t', $timestamp);
 
         $stmt = $pdo->prepare("SELECT period_id FROM evaluation_period WHERE start_date = ? AND end_date = ?");
         $stmt->execute([$start_date, $end_date]);
         $row = $stmt->fetch();
-        if ($row) return $row['period_id'];
+        if ($row)
+            return $row['period_id'];
 
         $insert = $pdo->prepare("INSERT INTO evaluation_period (start_date, end_date, is_processed) VALUES (?, ?, 0)");
         $insert->execute([$start_date, $end_date]);
@@ -146,13 +160,13 @@ try {
 
         $dept_id = $libDeptIds[array_rand($libDeptIds)];
         $role_id = $roleIds[array_rand($roleIds)];
-        
+
         $other_patron = ($roles[array_search($role_id, $roleIds)] === 'Other') ? 'External Researcher' : null;
 
         // NTPs might have NULL college
         $college_id = ($role_id == $roleIds[2]) ? null : $collegeIds[array_rand($collegeIds)];
         $acad_dept_id = ($college_id && isset($acadDeptIds[$college_id])) ? $acadDeptIds[$college_id][array_rand($acadDeptIds[$college_id])] : null;
-        
+
         $email = "test_user_" . rand(1000, 9999) . "@auf.edu.ph";
         $is_sat = $satisfaction[array_rand($satisfaction)];
         $comment = $comments[array_rand($comments)];
@@ -165,7 +179,18 @@ try {
         $overall = round(array_sum($scores) / count($scores), 2);
 
         $parent_stmt->execute([
-            $period_id, $dept_id, $role_id, $other_patron, $college_id, $acad_dept_id, $email, $is_sat, $overall, '', $comment, $created_at
+            $period_id,
+            $dept_id,
+            $role_id,
+            $other_patron,
+            $college_id,
+            $acad_dept_id,
+            $email,
+            $is_sat,
+            $overall,
+            '',
+            $comment,
+            $created_at
         ]);
         $submission_id = $pdo->lastInsertId();
 
@@ -189,7 +214,9 @@ try {
     echo "<p style='color:green; font-weight:bold;'>Successfully seeded {$recordsToGenerate} records with 'Other' specify logic!</p>";
 
 } catch (Exception $e) {
-    if ($pdo->inTransaction()) { $pdo->rollBack(); }
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
     echo "<p style='color:red;'>Seeding Failed: " . $e->getMessage() . "</p>";
 }
 ?>

@@ -204,7 +204,13 @@ try {
             font-family: 'Inter', sans-serif;
         }
 
-        .shadow-sm, .shadow, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl, .shadow-inner {
+        .shadow-sm,
+        .shadow,
+        .shadow-md,
+        .shadow-lg,
+        .shadow-xl,
+        .shadow-2xl,
+        .shadow-inner {
             box-shadow: none !important;
         }
 
@@ -235,7 +241,7 @@ try {
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
         }
-        
+
         .kpi-card {
             background: #FFFFFF;
             border: 1px solid #E0E0E0;
@@ -300,19 +306,17 @@ try {
                     </div>
                     Dashboard Overview
                 </h1>
-                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-tight">System Terminal / Operational Intelligence</p>
+                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-tight">System Terminal / Operational
+                    Intelligence</p>
             </div>
 
             <!-- 'Control Center' Date Filters -->
             <div class="flex items-center gap-3">
-                <div
-                    class="flex items-center bg-white border border-slate-300 p-1">
+                <div class="flex items-center bg-white border border-slate-300 p-1">
                     <!-- Start Date Pill -->
-                    <div
-                        class="flex items-center gap-1 px-3 py-1 bg-slate-50 border border-slate-200 group">
-                        <span
-                            class="text-[9px] font-black text-slate-500 uppercase tracking-tighter mr-1">From</span>
-                        <select id="header_start_month"
+                    <div class="flex items-center gap-1 px-3 py-1 bg-slate-50 border border-slate-200 group">
+                        <span class="text-[9px] font-black text-slate-500 uppercase tracking-tighter mr-1">From</span>
+                        <select id="header_start_month" onchange="applyDateFilter()"
                             class="text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 cursor-pointer py-0 px-1">
                             <?php $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
                             foreach ($months as $m) {
@@ -320,8 +324,13 @@ try {
                                 echo "<option value='" . strtoupper($m) . "' class='bg-white text-slate-800' $selected>$m</option>";
                             } ?>
                         </select>
-                        <input type="number" id="header_start_year" value="<?php echo $startYear; ?>"
-                            class="text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 w-16 py-0 px-1">
+                        <select id="header_start_year" onchange="applyDateFilter()"
+                            class="text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 cursor-pointer py-0 px-1">
+                            <?php for ($y = date('Y', strtotime($dbEarliest)); $y <= date('Y'); $y++) {
+                                $selected = ($y == $startYear) ? 'selected' : '';
+                                echo "<option value='$y' class='bg-white text-slate-800' $selected>$y</option>";
+                            } ?>
+                        </select>
                     </div>
 
                     <!-- Separator Icon -->
@@ -333,27 +342,26 @@ try {
                     </div>
 
                     <!-- End Date Pill -->
-                    <div
-                        class="flex items-center gap-1 px-3 py-1 bg-slate-50 border border-slate-200 group">
-                        <span
-                            class="text-[9px] font-black text-slate-500 uppercase tracking-tighter mr-1">To</span>
-                        <select id="header_end_month"
+                    <div class="flex items-center gap-1 px-3 py-1 bg-slate-50 border border-slate-200 group">
+                        <span class="text-[9px] font-black text-slate-500 uppercase tracking-tighter mr-1">To</span>
+                        <select id="header_end_month" onchange="applyDateFilter()"
                             class="text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 cursor-pointer py-0 px-1">
                             <?php foreach ($months as $m) {
                                 $selected = (strtoupper($m) === strtoupper($endMonth)) ? 'selected' : '';
                                 echo "<option value='" . strtoupper($m) . "' class='bg-white text-slate-800' $selected>$m</option>";
                             } ?>
                         </select>
-                        <input type="number" id="header_end_year" value="<?php echo $endYear; ?>"
-                            class="text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 w-16 py-0 px-1">
+                        <select id="header_end_year" onchange="applyDateFilter()"
+                            class="text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 cursor-pointer py-0 px-1">
+                            <?php for ($y = date('Y', strtotime($dbEarliest)); $y <= date('Y'); $y++) {
+                                $selected = ($y == $endYear) ? 'selected' : '';
+                                echo "<option value='$y' class='bg-white text-slate-800' $selected>$y</option>";
+                            } ?>
+                        </select>
                     </div>
                 </div>
 
-                <!-- Action Buttons -->
-                <div class="flex items-center gap-2">
-                    <button onclick="applyDateFilter()"
-                        class="bg-[#4A47A3] hover:bg-[#3b3882] text-white px-5 py-2 text-[10px] font-bold uppercase tracking-widest border border-[#3b3882]">Apply</button>
-                </div>
+                <!-- No Apply button needed (Auto-submit on change) -->
             </div>
         </header>
 
@@ -365,14 +373,15 @@ try {
                 <div class="kpi-card">
                     <div class="kpi-title">Total Evaluations</div>
                     <div class="kpi-value"><?php echo htmlspecialchars($totalEvaluations); ?></div>
-                    <div class="kpi-subtext">Cumulative submissions</div>
+                    <div class="kpi-subtext"></div>
                     <div class="status-accent bg-blue-500"></div>
                 </div>
 
                 <!-- Overall Satisfaction -->
                 <div class="kpi-card">
                     <div class="kpi-title">Overall Satisfaction</div>
-                    <div class="kpi-value"><?php echo number_format((float) $avgScore, 1); ?> <span class="text-sm font-normal text-slate-400">/ 5.0</span></div>
+                    <div class="kpi-value"><?php echo number_format((float) $avgScore, 1); ?> <span
+                            class="text-sm font-normal text-slate-400">/ 5.0</span></div>
                     <div class="kpi-subtext">Average metric score</div>
                     <div class="status-accent bg-emerald-500"></div>
                 </div>
@@ -380,7 +389,8 @@ try {
                 <!-- Most Active College -->
                 <div id="kpiMostActive" class="kpi-card cursor-pointer hover:bg-slate-50 transition-colors">
                     <div class="kpi-title">Most Active College</div>
-                    <div class="text-base font-bold text-black mt-1 line-clamp-1" title="<?php echo htmlspecialchars($mostActiveCollege); ?>">
+                    <div class="text-base font-bold text-black mt-1 line-clamp-1"
+                        title="<?php echo htmlspecialchars($mostActiveCollege); ?>">
                         <?php echo htmlspecialchars($mostActiveCollege); ?>
                     </div>
                     <div class="kpi-subtext"><?php echo $mostActiveCollegeCount; ?> Evaluations</div>
@@ -388,10 +398,13 @@ try {
                 </div>
 
                 <!-- Pending Flags/Reviews -->
-                <div class="kpi-card cursor-pointer hover:bg-slate-50 transition-colors" onclick="window.location.href='feedback.php';">
+                <div class="kpi-card cursor-pointer hover:bg-slate-50 transition-colors"
+                    onclick="window.location.href='feedback.php';">
                     <div class="kpi-title">Pending Flags</div>
                     <div class="kpi-value"><?php echo htmlspecialchars($pendingFlags); ?></div>
-                    <div class="kpi-subtext">Requires attention <span class="<?php echo $pendingFlags > 0 ? 'text-rose-600' : 'text-emerald-600'; ?> font-bold"><?php echo $pendingFlags > 0 ? 'Action Needed' : 'Clear'; ?></span></div>
+                    <div class="kpi-subtext"><span
+                            class="<?php echo $pendingFlags > 0 ? 'text-rose-600' : 'text-emerald-600'; ?> font-bold"><?php echo $pendingFlags > 0 ? 'Action Needed' : 'Clear'; ?></span>
+                    </div>
                     <div class="status-accent bg-rose-500"></div>
                 </div>
             </div>
@@ -399,8 +412,7 @@ try {
             <!-- 2. The Main Analytics Grid -->
             <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
                 <!-- Left Column (Performance Trend) -->
-                <div
-                    class="bg-white p-4 border border-slate-300 lg:col-span-3 flex flex-col">
+                <div class="bg-white p-4 border border-slate-300 lg:col-span-3 flex flex-col">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-xs font-bold text-[#4A47A3] uppercase tracking-wider">Submission Volume</h3>
                         <div class="flex gap-2">
@@ -440,12 +452,10 @@ try {
                 </div>
 
                 <!-- Right Column (Demographics) -->
-                <div
-                    class="bg-white p-4 border border-slate-300 lg:col-span-2 flex flex-col">
+                <div class="bg-white p-4 border border-slate-300 lg:col-span-2 flex flex-col">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-xs font-bold text-[#4A47A3] uppercase tracking-wider">Demographics</h3>
-                        <div
-                            class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">
+                        <div class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">
                             User Distribution</div>
                     </div>
                     <div class="w-full h-64 relative flex-1">
@@ -455,11 +465,11 @@ try {
             </div>
 
             <!-- 3. Recent Activity Table -->
-            <div
-                class="bg-white p-4 border border-slate-300 flex flex-col">
+            <div class="bg-white p-4 border border-slate-300 flex flex-col">
                 <div class="flex justify-between items-center mb-4">
                     <div>
-                        <h3 class="text-xs font-bold text-[#4A47A3] uppercase tracking-wider">Recent Submissions</h3>
+                        <h3 class="text-xs font-bold text-[#4A47A3] uppercase tracking-wider">Recent Submissions
+                        </h3>
                     </div>
                     <a href="respondents.php" class="btn-apricot px-3 py-1.5 text-xs font-bold">Go To
                         Respondents</a>
@@ -469,16 +479,23 @@ try {
                     <table class="w-full text-left border-collapse min-w-[800px]">
                         <thead class="bg-slate-50 border-b border-slate-200">
                             <tr>
-                                <th class="py-2 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-r border-slate-200">Date
+                                <th
+                                    class="py-2 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-r border-slate-200">
+                                    Date
                                 </th>
-                                <th class="py-2 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-r border-slate-200">
+                                <th
+                                    class="py-2 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-r border-slate-200">
                                     Respondent</th>
                                 <th
                                     class="py-2 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center border-r border-slate-200">
                                     Satisfied?</th>
-                                <th class="py-2 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-r border-slate-200">College
+                                <th
+                                    class="py-2 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-r border-slate-200">
+                                    College
                                 </th>
-                                <th class="py-2 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-r border-slate-200">User
+                                <th
+                                    class="py-2 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-r border-slate-200">
+                                    User
                                     Type</th>
                                 <th
                                     class="py-2 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">
@@ -534,7 +551,8 @@ try {
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <tr>
-                                    <td colspan="6" class="py-12 text-center text-slate-400 font-medium italic">No recent
+                                    <td colspan="6" class="py-12 text-center text-slate-400 font-medium italic">No
+                                        recent
                                         evaluation records found.</td>
                                 </tr>
                             <?php endif; ?>

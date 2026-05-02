@@ -244,6 +244,8 @@ $sentimentData = $sentimentStmt->fetchAll(PDO::FETCH_ASSOC);
 
                 <!-- Action Buttons -->
                 <div class="flex items-center gap-2">
+                    <button onclick="applyDateFilter()"
+                        class="bg-[#4A47A3] hover:bg-[#3b3882] text-white px-5 py-2 text-[10px] font-bold uppercase tracking-widest border border-[#3b3882]">Apply</button>
                     <button onclick="resetDateFilter()"
                         class="bg-white hover:bg-slate-50 text-slate-500 px-5 py-2 text-[10px] font-bold uppercase tracking-widest border border-slate-300">Reset</button>
                 </div>
@@ -342,16 +344,27 @@ $sentimentData = $sentimentStmt->fetchAll(PDO::FETCH_ASSOC);
     <script>
         function applyDateFilter() {
             const sm = document.getElementById('header_start_month').value;
-            const sy = document.getElementById('header_start_year').value;
+            const sy = parseInt(document.getElementById('header_start_year').value);
             const em = document.getElementById('header_end_month').value;
-            const ey = document.getElementById('header_end_year').value;
+            const ey = parseInt(document.getElementById('header_end_year').value);
+            
+            const monthNames = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
+            const startDate = new Date(sy, monthNames.indexOf(sm), 1);
+            const endDate = new Date(ey, monthNames.indexOf(em), 1);
+            const now = new Date();
+            const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+            if (startDate > currentMonth || endDate > currentMonth) {
+                alert("Error: Future dates are not allowed. Please select current or past months.");
+                return;
+            }
+            if (startDate > endDate) {
+                alert("Error: 'From' date cannot be later than 'To' date.");
+                return;
+            }
+            
             window.location.href = `?start_month=${sm}&start_year=${sy}&end_month=${em}&end_year=${ey}`;
         }
-
-        document.getElementById('header_start_month').addEventListener('change', applyDateFilter);
-        document.getElementById('header_start_year').addEventListener('change', applyDateFilter);
-        document.getElementById('header_end_month').addEventListener('change', applyDateFilter);
-        document.getElementById('header_end_year').addEventListener('change', applyDateFilter);
 
         function resetDateFilter() { window.location.href = window.location.pathname; }
         

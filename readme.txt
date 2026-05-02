@@ -1,5 +1,5 @@
 --new schema. please drop old one and run this new one tysm
-
+--then after, run initial_setup.php for survey instances proper.
 -- phpMyAdmin SQL Dump
 -- version 5.2.1
 -- https://www.phpmyadmin.net/
