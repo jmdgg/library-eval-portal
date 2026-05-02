@@ -26,9 +26,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 }
 
-// 1. Fetch Submissions with Likert Pivot
+// --- DATE RANGE LOGIC ---
+$boundsStmt = $pdo->query("SELECT MIN(created_at) as earliest, MAX(created_at) as latest FROM survey_submission");
+$bounds = $boundsStmt->fetch();
+$dbEarliest = $bounds['earliest'] ? date('Y-m-d', strtotime($bounds['earliest'])) : date('Y-m-01');
+$dbLatest = $bounds['latest'] ? date('Y-m-d', strtotime($bounds['latest'])) : date('Y-m-d');
+
+function getSqlDate($monthName, $year, $isEnd = false) {
+    $monthNum = date('m', strtotime($monthName));
+    if ($isEnd) return date('Y-m-t 23:59:59', strtotime("$year-$monthNum-01"));
+    return "$year-$monthNum-01 00:00:00";
+}
+
+$startMonth = $_GET['start_month'] ?? date('F', strtotime($dbEarliest));
+$startYear = $_GET['start_year'] ?? date('Y', strtotime($dbEarliest));
+$endMonth = $_GET['end_month'] ?? date('F', strtotime($dbLatest));
+$endYear = $_GET['end_year'] ?? date('Y', strtotime($dbLatest));
+
+$startDate = getSqlDate($startMonth, $startYear);
+$endDate = getSqlDate($endMonth, $endYear, true);
+
+// 1. Fetch Submissions with Likert Pivot and Date Filter
 try {
-    $stmt = $pdo->query("
+    $stmt = $pdo->prepare("
         SELECT 
             ss.submission_id, 
             ss.created_at as submission_date, 
@@ -45,12 +65,13 @@ try {
         LEFT JOIN patron_type pt ON ss.patron_type_id = pt.patron_type_id
         LEFT JOIN college c ON ss.college_id = c.college_id
         LEFT JOIN response_detail rd ON ss.submission_id = rd.submission_id
+        WHERE ss.created_at BETWEEN ? AND ?
         GROUP BY ss.submission_id
         ORDER BY created_at DESC
     ");
+    $stmt->execute([$startDate, $endDate]);
     $allSubmissions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Prepare data for JS
     foreach ($allSubmissions as &$sub) {
         if ($sub['college'] && preg_match('/\((.*?)\)/', $sub['college'], $matches)) {
             $sub['college'] = $matches[1];
@@ -137,6 +158,32 @@ try {
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
+
+        #loading-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(226, 232, 240, 0.5);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loader {
+            width: 48px;
+            height: 48px;
+            border: 5px solid #FFF;
+            border-bottom-color: #4A47A3;
+            border-radius: 50% !important;
+            display: inline-block;
+            box-sizing: border-box;
+            animation: rotation 1s linear infinite;
+        }
+
+        @keyframes rotation {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 
@@ -161,23 +208,45 @@ try {
                 </h1>
                 <p class="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Data Management / Respondents</p>
             </div>
-            <div class="flex items-center gap-4">
-                <!-- Batch Actions (Hidden by default) -->
-                <div id="batchActionContainer" class="hidden">
-                    <button onclick="confirmBatchDelete()"
-                        class="bg-rose-50 hover:bg-rose-100 text-rose-600 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest border border-rose-200 transition-all flex items-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-                            </path>
-                        </svg>
-                        Delete Selected (<span id="selectedCount">0</span>)
-                    </button>
+            <!-- 'Control Center' Date Filters -->
+            <div class="flex items-center gap-3">
+                <div class="flex items-center bg-white border border-slate-300 p-1">
+                    <div class="flex items-center gap-1 px-3 py-1 bg-slate-50 border border-slate-200">
+                        <span class="text-[9px] font-black text-slate-500 uppercase tracking-tighter mr-1">From</span>
+                        <select id="header_start_month" class="text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 cursor-pointer py-0 px-1">
+                            <?php $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                            foreach ($months as $m) {
+                                $selected = (strtoupper($m) === strtoupper($startMonth)) ? 'selected' : '';
+                                echo "<option value='" . strtoupper($m) . "' class='bg-white text-slate-800' $selected>$m</option>";
+                            } ?>
+                        </select>
+                        <select id="header_start_year" class="text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 cursor-pointer py-0 px-1">
+                            <?php for ($y = date('Y', strtotime($dbEarliest)); $y <= date('Y'); $y++) {
+                                $selected = ($y == $startYear) ? 'selected' : '';
+                                echo "<option value='$y' class='bg-white text-slate-800' $selected>$y</option>";
+                            } ?>
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-1 px-3 py-1 bg-slate-50 border border-slate-200 ml-1">
+                        <span class="text-[9px] font-black text-slate-500 uppercase tracking-tighter mr-1">To</span>
+                        <select id="header_end_month" class="text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 cursor-pointer py-0 px-1">
+                            <?php foreach ($months as $m) {
+                                $selected = (strtoupper($m) === strtoupper($endMonth)) ? 'selected' : '';
+                                echo "<option value='" . strtoupper($m) . "' class='bg-white text-slate-800' $selected>$m</option>";
+                            } ?>
+                        </select>
+                        <select id="header_end_year" class="text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 cursor-pointer py-0 px-1">
+                            <?php for ($y = date('Y', strtotime($dbEarliest)); $y <= date('Y'); $y++) {
+                                $selected = ($y == $endYear) ? 'selected' : '';
+                                echo "<option value='$y' class='bg-white text-slate-800' $selected>$y</option>";
+                            } ?>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="relative group">
-                    <input type="text" id="advancedSearch" placeholder="Search evaluation records..."
-                        class="w-80 bg-white border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#4A47A3] font-bold pl-10">
+                    <input type="text" id="advancedSearch" placeholder="Search..."
+                        class="w-64 bg-white border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#4A47A3] font-bold pl-10">
                     <svg class="w-4 h-4 text-slate-400 absolute left-3 top-3"
                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -198,6 +267,19 @@ try {
 
             <div class="flex items-center justify-between">
                 <div class="flex gap-2">
+                    <!-- Batch Actions (Hidden by default) -->
+                    <div id="batchActionContainer" class="hidden mr-4">
+                        <button onclick="confirmBatchDelete()"
+                            class="bg-rose-50 hover:bg-rose-100 text-rose-600 px-3 py-1 text-[10px] font-bold uppercase tracking-widest border border-rose-200 transition-all flex items-center gap-2">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                </path>
+                            </svg>
+                            Delete (<span id="selectedCount">0</span>)
+                        </button>
+                    </div>
+
                     <select id="filterCollege"
                         class="bg-white border border-slate-300 px-3 py-1.5 text-xs font-bold text-gray-700 outline-none focus:border-[#4A47A3]">
                         <option value="All Colleges">All Colleges</option>
@@ -216,7 +298,7 @@ try {
                     </select>
                 </div>
                 <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                    Showing <span id="visibleCount" class="text-[#4A47A3]"><?php echo count($allSubmissions); ?></span>
+                    Showing <span id="visibleCount" class="text-[#4A47A3] font-black"><?php echo count($allSubmissions); ?></span>
                     Records
                 </div>
             </div>
@@ -385,6 +467,10 @@ try {
         <input type="hidden" name="ids" id="formIds">
     </form>
 
+    <div id="loading-overlay">
+        <span class="loader"></span>
+    </div>
+
     <script>
         const likertLabels = { 5: "Strongly Agree", 4: "Agree", 3: "Neutral", 2: "Disagree", 1: "Strongly Disagree" };
         const likertColors = { 
@@ -394,6 +480,30 @@ try {
             2: "bg-orange-50 text-orange-700 border-orange-200", 
             1: "bg-rose-50 text-rose-700 border-rose-200" 
         };
+
+        // --- FILTER SYNC LOGIC ---
+        function updateRange() {
+            const sm = document.getElementById('header_start_month').value;
+            const sy = document.getElementById('header_start_year').value;
+            const em = document.getElementById('header_end_month').value;
+            const ey = document.getElementById('header_end_year').value;
+            
+            showLoading();
+            window.location.href = `respondents.php?start_month=${sm}&start_year=${sy}&end_month=${em}&end_year=${ey}`;
+        }
+
+        document.getElementById('header_start_month').addEventListener('change', updateRange);
+        document.getElementById('header_start_year').addEventListener('change', updateRange);
+        document.getElementById('header_end_month').addEventListener('change', updateRange);
+        document.getElementById('header_end_year').addEventListener('change', updateRange);
+
+        function showLoading() {
+            document.getElementById('loading-overlay').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
 
         function openModal(btn) {
             const data = JSON.parse(btn.getAttribute('data-respondent'));

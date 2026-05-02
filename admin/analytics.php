@@ -203,8 +203,13 @@ $sentimentData = $sentimentStmt->fetchAll(PDO::FETCH_ASSOC);
                                 echo "<option value='" . strtoupper($m) . "' class='bg-white text-slate-800' $selected>$m</option>";
                             } ?>
                         </select>
-                        <input type="number" id="header_start_year" value="<?php echo $startYear; ?>"
-                            class="text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 w-16 py-0 px-1">
+                        <select id="header_start_year"
+                            class="text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 cursor-pointer py-0 px-1">
+                            <?php for ($y = date('Y', strtotime($dbEarliest)); $y <= date('Y'); $y++) {
+                                $selected = ($y == $startYear) ? 'selected' : '';
+                                echo "<option value='$y' class='bg-white text-slate-800' $selected>$y</option>";
+                            } ?>
+                        </select>
                     </div>
 
                     <!-- Separator Icon -->
@@ -227,15 +232,18 @@ $sentimentData = $sentimentStmt->fetchAll(PDO::FETCH_ASSOC);
                                 echo "<option value='" . strtoupper($m) . "' class='bg-white text-slate-800' $selected>$m</option>";
                             } ?>
                         </select>
-                        <input type="number" id="header_end_year" value="<?php echo $endYear; ?>"
-                            class="text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 w-16 py-0 px-1">
+                        <select id="header_end_year"
+                            class="text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 cursor-pointer py-0 px-1">
+                            <?php for ($y = date('Y', strtotime($dbEarliest)); $y <= date('Y'); $y++) {
+                                $selected = ($y == $endYear) ? 'selected' : '';
+                                echo "<option value='$y' class='bg-white text-slate-800' $selected>$y</option>";
+                            } ?>
+                        </select>
                     </div>
                 </div>
 
                 <!-- Action Buttons -->
                 <div class="flex items-center gap-2">
-                    <button onclick="applyDateFilter()"
-                        class="bg-[#4A47A3] hover:bg-[#3b3882] text-white px-5 py-2 text-[10px] font-bold uppercase tracking-widest border border-[#3b3882]">Apply</button>
                     <button onclick="resetDateFilter()"
                         class="bg-white hover:bg-slate-50 text-slate-500 px-5 py-2 text-[10px] font-bold uppercase tracking-widest border border-slate-300">Reset</button>
                 </div>
@@ -334,43 +342,68 @@ $sentimentData = $sentimentStmt->fetchAll(PDO::FETCH_ASSOC);
     <script>
         function applyDateFilter() {
             const sm = document.getElementById('header_start_month').value;
-            const sy = parseInt(document.getElementById('header_start_year').value);
+            const sy = document.getElementById('header_start_year').value;
             const em = document.getElementById('header_end_month').value;
-            const ey = parseInt(document.getElementById('header_end_year').value);
-
-            const monthNames = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
-            const startDate = new Date(sy, monthNames.indexOf(sm), 1);
-            const endDate = new Date(ey, monthNames.indexOf(em), 1);
-            const now = new Date();
-            const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-            // 1. No future dates
-            if (startDate > currentMonth || endDate > currentMonth) {
-                alert("Error: Future dates are not allowed. Please select current or past months.");
-                return;
-            }
-
-            // 2. From date cannot be ahead of To date
-            if (startDate > endDate) {
-                alert("Error: 'From' date cannot be later than 'To' date.");
-                return;
-            }
-
+            const ey = document.getElementById('header_end_year').value;
             window.location.href = `?start_month=${sm}&start_year=${sy}&end_month=${em}&end_year=${ey}`;
         }
+
+        document.getElementById('header_start_month').addEventListener('change', applyDateFilter);
+        document.getElementById('header_start_year').addEventListener('change', applyDateFilter);
+        document.getElementById('header_end_month').addEventListener('change', applyDateFilter);
+        document.getElementById('header_end_year').addEventListener('change', applyDateFilter);
+
         function resetDateFilter() { window.location.href = window.location.pathname; }
+        
         async function handleExport() {
             const overlay = document.getElementById('export-overlay');
             const btn = document.getElementById('export-btn');
-            overlay.classList.remove('hidden'); btn.disabled = true;
+            
+            const sm = document.getElementById('header_start_month').value;
+            const sy = document.getElementById('header_start_year').value;
+            const em = document.getElementById('header_end_month').value;
+            const ey = document.getElementById('header_end_year').value;
+            
+            overlay.classList.remove('hidden'); 
+            btn.disabled = true;
+            
             try {
-                const response = await fetch(`generate_excel.php${window.location.search}`, { method: 'GET' });
-                if (!response.ok) throw new Error('Export failed');
+                const queryParams = `?start_month=${sm}&start_year=${sy}&end_month=${em}&end_year=${ey}`;
+                const response = await fetch(`generate_excel.php${queryParams}`, { method: 'GET' });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || 'Export failed');
+                }
+                
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a'); a.href = url; a.download = `EVAL_REPORT_${Date.now()}.xlsx`;
-                document.body.appendChild(a); a.click(); a.remove();
-            } catch (error) { alert(error.message); } finally { overlay.classList.add('hidden'); btn.disabled = false; }
+                const a = document.createElement('a');
+                a.href = url;
+                
+                // Try to get filename from Content-Disposition header
+                const disposition = response.headers.get('Content-Disposition');
+                let filename = `EVAL_REPORT_${sm}_${sy}_to_${em}_${ey}.xlsx`.replace(/ /g, '_').toUpperCase();
+                
+                if (disposition && disposition.indexOf('attachment') !== -1) {
+                    const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                    const matches = filenameRegex.exec(disposition);
+                    if (matches != null && matches[1]) { 
+                        filename = matches[1].replace(/['"]/g, '');
+                    }
+                }
+                
+                a.download = filename;
+                document.body.appendChild(a); 
+                a.click(); 
+                a.remove();
+                window.URL.revokeObjectURL(url);
+            } catch (error) { 
+                alert("Export Error: " + error.message); 
+            } finally { 
+                overlay.classList.add('hidden'); 
+                btn.disabled = false; 
+            }
         }
         const serviceData = <?php echo json_encode($serviceData); ?>;
         const metricData = <?php echo json_encode($metricData); ?>;

@@ -22,9 +22,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     exit;
 }
 
+// --- DATE RANGE LOGIC ---
+$boundsStmt = $pdo->query("SELECT MIN(created_at) as earliest, MAX(created_at) as latest FROM survey_submission");
+$bounds = $boundsStmt->fetch();
+$dbEarliest = $bounds['earliest'] ? date('Y-m-d', strtotime($bounds['earliest'])) : date('Y-m-01');
+$dbLatest = $bounds['latest'] ? date('Y-m-d', strtotime($bounds['latest'])) : date('Y-m-d');
+
+function getSqlDate($monthName, $year, $isEnd = false) {
+    $monthNum = date('m', strtotime($monthName));
+    if ($isEnd) return date('Y-m-t 23:59:59', strtotime("$year-$monthNum-01"));
+    return "$year-$monthNum-01 00:00:00";
+}
+
+$startMonth = $_GET['start_month'] ?? date('F', strtotime($dbEarliest));
+$startYear = $_GET['start_year'] ?? date('Y', strtotime($dbEarliest));
+$endMonth = $_GET['end_month'] ?? date('F', strtotime($dbLatest));
+$endYear = $_GET['end_year'] ?? date('Y', strtotime($dbLatest));
+
+$startDate = getSqlDate($startMonth, $startYear);
+$endDate = getSqlDate($endMonth, $endYear, true);
+
 // --- FETCH REAL FEEDBACK DATA ---
 try {
-    $stmt = $pdo->query("
+    $stmt = $pdo->prepare("
         SELECT 
             ss.submission_id as id, 
             ss.created_at as submission_date, 
@@ -40,11 +60,13 @@ try {
         JOIN patron_type pt ON ss.patron_type_id = pt.patron_type_id
         LEFT JOIN college c ON ss.college_id = c.college_id
         JOIN library_department ld ON ss.lib_dept_id = ld.lib_dept_id
-        WHERE (ss.comments IS NOT NULL AND ss.comments != '') 
+        WHERE ((ss.comments IS NOT NULL AND ss.comments != '') 
            OR (ss.recommendations IS NOT NULL AND ss.recommendations != '')
-           OR ss.overall_rating < 3.00
+           OR ss.overall_rating < 3.00)
+           AND ss.created_at BETWEEN ? AND ?
         ORDER BY ss.created_at DESC
     ");
+    $stmt->execute([$startDate, $endDate]);
     $allFeedback = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {
     $allFeedback = [];
@@ -130,6 +152,32 @@ $role_display = $is_superadmin ? 'Super Administrator' : 'Branch Administrator';
             letter-spacing: 0.05em;
             margin-bottom: 0.5rem;
         }
+
+        #loading-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(226, 232, 240, 0.5);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loader {
+            width: 48px;
+            height: 48px;
+            border: 5px solid #FFF;
+            border-bottom-color: #4A47A3;
+            border-radius: 50% !important;
+            display: inline-block;
+            box-sizing: border-box;
+            animation: rotation 1s linear infinite;
+        }
+
+        @keyframes rotation {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 
@@ -154,6 +202,40 @@ $role_display = $is_superadmin ? 'Super Administrator' : 'Branch Administrator';
                     Feedback Inbox
                 </h1>
                 <p class="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Communications / Evaluation Feedback</p>
+            <div class="flex items-center gap-3">
+                <div class="flex items-center bg-white border border-slate-300 p-1">
+                    <div class="flex items-center gap-1 px-3 py-1 bg-slate-50 border border-slate-200">
+                        <span class="text-[9px] font-black text-slate-500 uppercase tracking-tighter mr-1">From</span>
+                        <select id="header_start_month" class="text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 cursor-pointer py-0 px-1">
+                            <?php $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                            foreach ($months as $m) {
+                                $selected = (strtoupper($m) === strtoupper($startMonth)) ? 'selected' : '';
+                                echo "<option value='" . strtoupper($m) . "' class='bg-white text-slate-800' $selected>$m</option>";
+                            } ?>
+                        </select>
+                        <select id="header_start_year" class="text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 cursor-pointer py-0 px-1">
+                            <?php for ($y = date('Y', strtotime($dbEarliest)); $y <= date('Y'); $y++) {
+                                $selected = ($y == $startYear) ? 'selected' : '';
+                                echo "<option value='$y' class='bg-white text-slate-800' $selected>$y</option>";
+                            } ?>
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-1 px-3 py-1 bg-slate-50 border border-slate-200 ml-1">
+                        <span class="text-[9px] font-black text-slate-500 uppercase tracking-tighter mr-1">To</span>
+                        <select id="header_end_month" class="text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 cursor-pointer py-0 px-1">
+                            <?php foreach ($months as $m) {
+                                $selected = (strtoupper($m) === strtoupper($endMonth)) ? 'selected' : '';
+                                echo "<option value='" . strtoupper($m) . "' class='bg-white text-slate-800' $selected>$m</option>";
+                            } ?>
+                        </select>
+                        <select id="header_end_year" class="text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 cursor-pointer py-0 px-1">
+                            <?php for ($y = date('Y', strtotime($dbEarliest)); $y <= date('Y'); $y++) {
+                                $selected = ($y == $endYear) ? 'selected' : '';
+                                echo "<option value='$y' class='bg-white text-slate-800' $selected>$y</option>";
+                            } ?>
+                        </select>
+                    </div>
+                </div>
             </div>
         </header>
 
@@ -309,10 +391,38 @@ $role_display = $is_superadmin ? 'Super Administrator' : 'Branch Administrator';
             </div>
 
         </main>
+    </div>    <div id="loading-overlay">
+        <span class="loader"></span>
     </div>
 
     <script>
         let currentlyActiveBtn = null;
+
+        // --- FILTER SYNC LOGIC ---
+        function updateRange() {
+            const sm = document.getElementById('header_start_month').value;
+            const sy = document.getElementById('header_start_year').value;
+            const em = document.getElementById('header_end_month').value;
+            const ey = document.getElementById('header_end_year').value;
+            
+            showLoading();
+            window.location.href = `feedback.php?start_month=${sm}&start_year=${sy}&end_month=${em}&end_year=${ey}`;
+        }
+
+        if (document.getElementById('header_start_month')) {
+            document.getElementById('header_start_month').addEventListener('change', updateRange);
+            document.getElementById('header_start_year').addEventListener('change', updateRange);
+            document.getElementById('header_end_month').addEventListener('change', updateRange);
+            document.getElementById('header_end_year').addEventListener('change', updateRange);
+        }
+
+        function showLoading() {
+            document.getElementById('loading-overlay').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
 
         function viewFeedback(btn) {
             const data = JSON.parse(btn.getAttribute('data-feedback'));
