@@ -434,6 +434,19 @@ $role_display = $is_superadmin ? 'Super Administrator' : 'Branch Administrator';
         filterCollege.addEventListener('change', applyFilters);
         filterUserType.addEventListener('change', applyFilters);
 
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const filterType = params.get('filterType');
+            if (filterType) {
+                const options = Array.from(filterUserType.options);
+                const match = options.find(opt => opt.value.toLowerCase() === filterType.toLowerCase());
+                if (match) {
+                    filterUserType.value = match.value;
+                }
+            }
+            applyFilters();
+        });
+
 
     </script>
 </body>
