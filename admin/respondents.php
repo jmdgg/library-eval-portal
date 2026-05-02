@@ -329,7 +329,9 @@ try {
                         <tbody class="text-sm divide-y divide-gray-200">
                             <?php if (!empty($allSubmissions)): ?>
                                 <?php foreach ($allSubmissions as $sub): ?>
-                                    <tr class="hover:bg-gray-50 transition-colors">
+                                    <tr class="hover:bg-gray-50 transition-colors" 
+                                        data-college="<?php echo htmlspecialchars($sub['college'] ?: 'N/A'); ?>" 
+                                        data-user-type="<?php echo htmlspecialchars($sub['role'] ?: 'N/A'); ?>">
                                         <td class="py-1 px-3 border-r border-slate-100 text-center">
                                             <input type="checkbox" name="submission_checkbox"
                                                 value="<?php echo $sub['submission_id']; ?>" onchange="handleRowSelect()"
@@ -571,19 +573,25 @@ try {
         }
 
         function applyFilters() {
-            const query = document.getElementById('advancedSearch').value.toLowerCase();
-            const college = document.getElementById('filterCollege').value;
-            const userType = document.getElementById('filterUserType').value;
+            const query = document.getElementById('advancedSearch').value.toLowerCase().trim();
+            const collegeFilter = document.getElementById('filterCollege').value;
+            const userTypeFilter = document.getElementById('filterUserType').value;
             const rows = document.querySelectorAll('#expandedSubmissionsTable tbody tr');
+            
             let visibleCount = 0;
+
             rows.forEach(row => {
-                if (row.cells.length < 7) return;
-                const text = row.innerText.toLowerCase();
-                const rowCollege = row.cells[3].innerText;
-                const rowType = row.cells[4].innerText;
-                const matchesSearch = !query || text.includes(query);
-                const matchesCollege = college === 'All Colleges' || rowCollege === college;
-                const matchesType = userType === 'All User Types' || rowType === userType;
+                // If it's the "No records" row, skip
+                if (row.cells.length < 2) return;
+
+                const rowCollege = row.getAttribute('data-college');
+                const rowType = row.getAttribute('data-user-type');
+                const rowText = row.textContent.toLowerCase();
+
+                const matchesSearch = !query || rowText.includes(query);
+                const matchesCollege = collegeFilter === 'All Colleges' || rowCollege === collegeFilter;
+                const matchesType = userTypeFilter === 'All User Types' || rowType === userTypeFilter;
+
                 if (matchesSearch && matchesCollege && matchesType) {
                     row.style.display = '';
                     visibleCount++;
@@ -591,6 +599,7 @@ try {
                     row.style.display = 'none';
                 }
             });
+
             document.getElementById('visibleCount').textContent = visibleCount;
         }
 
