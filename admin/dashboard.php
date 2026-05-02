@@ -37,8 +37,17 @@ try {
     ");
     $mostActiveCollege = $stmt->fetchColumn() ?: 'N/A';
 
-    // Pending Flags/Reviews (overall_rating < 3.00)
-    $stmt = $pdo->query("SELECT COUNT(*) FROM survey_submission WHERE overall_rating < 3.00");
+    // Pending Flags/Reviews (unread + (overall_rating < 3.00 OR has feedback))
+    $stmt = $pdo->query("
+        SELECT COUNT(*) 
+        FROM survey_submission 
+        WHERE is_read = 0 
+          AND (
+            (overall_rating IS NOT NULL AND CAST(overall_rating AS DECIMAL(10,2)) < 3.00) 
+            OR (comments IS NOT NULL AND comments != '') 
+            OR (recommendations IS NOT NULL AND recommendations != '')
+          )
+    ");
     $pendingFlags = $stmt->fetchColumn() ?: 0;
 
     // Recent Submissions
@@ -224,7 +233,8 @@ try {
                         <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Total Evaluations
                         </p>
                         <p class="text-2xl font-extrabold text-slate-800">
-                            <?php echo htmlspecialchars($totalEvaluations); ?></p>
+                            <?php echo htmlspecialchars($totalEvaluations); ?>
+                        </p>
                     </div>
                 </div>
 
@@ -244,7 +254,8 @@ try {
                         </p>
                         <p class="text-2xl font-extrabold text-slate-800">
                             <?php echo number_format((float) $avgScore, 1); ?> <span
-                                class="text-sm font-medium text-slate-400">/ 5.0</span></p>
+                                class="text-sm font-medium text-slate-400">/ 5.0</span>
+                        </p>
                     </div>
                 </div>
 
@@ -294,25 +305,37 @@ try {
                 <div
                     class="bg-white p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 border-t-4 border-t-blue-500 relative overflow-hidden group lg:col-span-3 flex flex-col">
                     <div class="flex items-center justify-between mb-6">
-                        <h3 class="text-lg font-extrabold text-slate-800 tracking-tight">Performance Trend</h3>
+                        <h3 class="text-lg font-extrabold text-slate-800 tracking-tight">Submission Volume</h3>
                         <div class="flex gap-2">
-                            <select id="chartView" class="bg-white border border-slate-200 rounded-lg px-2 py-1 text-[10px] font-bold text-slate-700 shadow-sm outline-none focus:border-blue-500 transition-colors uppercase tracking-wider">
+                            <select id="chartView"
+                                class="bg-white border border-slate-200 rounded-lg px-2 py-1 text-[10px] font-bold text-slate-700 shadow-sm outline-none focus:border-blue-500 transition-colors uppercase tracking-wider">
                                 <option value="yearly">Yearly Trend</option>
                                 <option value="monthly">Monthly Trend</option>
                             </select>
-                            <select id="chartYear" class="bg-white border border-slate-200 rounded-lg px-2 py-1 text-[10px] font-bold text-slate-700 shadow-sm outline-none focus:border-blue-500 transition-colors uppercase tracking-wider">
+                            <select id="chartYear"
+                                class="bg-white border border-slate-200 rounded-lg px-2 py-1 text-[10px] font-bold text-slate-700 shadow-sm outline-none focus:border-blue-500 transition-colors uppercase tracking-wider">
                                 <!-- JS Populated -->
                             </select>
-                            <select id="chartMonth" class="bg-white border border-slate-200 rounded-lg px-2 py-1 text-[10px] font-bold text-slate-700 shadow-sm outline-none focus:border-blue-500 transition-colors uppercase tracking-wider hidden">
-                                <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option>
-                                <option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option>
-                                <option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option>
-                                <option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
+                            <select id="chartMonth"
+                                class="bg-white border border-slate-200 rounded-lg px-2 py-1 text-[10px] font-bold text-slate-700 shadow-sm outline-none focus:border-blue-500 transition-colors uppercase tracking-wider hidden">
+                                <option value="1">Jan</option>
+                                <option value="2">Feb</option>
+                                <option value="3">Mar</option>
+                                <option value="4">Apr</option>
+                                <option value="5">May</option>
+                                <option value="6">Jun</option>
+                                <option value="7">Jul</option>
+                                <option value="8">Aug</option>
+                                <option value="9">Sep</option>
+                                <option value="10">Oct</option>
+                                <option value="11">Nov</option>
+                                <option value="12">Dec</option>
                             </select>
                         </div>
                     </div>
                     <div class="w-full h-80 relative flex-1">
-                        <div id="chartEmptyState" style="display:none; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); text-align:center; width: 100%;">
+                        <div id="chartEmptyState"
+                            style="display:none; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); text-align:center; width: 100%;">
                             <h4 class="text-slate-400 font-bold text-sm">No evaluations as of yet</h4>
                         </div>
                         <canvas id="trendChart"></canvas>
@@ -342,8 +365,8 @@ try {
                         <h3 class="text-lg font-extrabold text-slate-800 tracking-tight">Recent Submissions</h3>
                         <p class="text-xs text-slate-500 mt-0.5">High-level view of latest library evaluations.</p>
                     </div>
-                    <a href="respondents.php"
-                        class="btn-apricot px-4 py-2 rounded-lg text-xs font-bold shadow-sm">Go To Respondents</a>
+                    <a href="respondents.php" class="btn-apricot px-4 py-2 rounded-lg text-xs font-bold shadow-sm">Go To
+                        Respondents</a>
                 </div>
 
                 <div class="overflow-x-auto custom-scrollbar border border-slate-100 rounded-xl">
@@ -371,7 +394,8 @@ try {
                                 <?php foreach (array_slice($recentSubmissions, 0, 10) as $sub): ?>
                                     <tr class="hover:bg-slate-50/50 transition-colors group">
                                         <td class="py-4 px-6 text-slate-600 font-medium">
-                                            <?php echo date('M d, Y', strtotime($sub['submission_date'])); ?></td>
+                                            <?php echo date('M d, Y', strtotime($sub['submission_date'])); ?>
+                                        </td>
                                         <td class="py-4 px-6">
                                             <div class="flex items-center gap-3">
                                                 <div
@@ -384,7 +408,7 @@ try {
                                         </td>
                                         <td class="py-4 px-6 text-center">
                                             <?php
-                                            $rating = (float)$sub['overall_rating'];
+                                            $rating = (float) $sub['overall_rating'];
                                             if ($rating >= 3.00) {
                                                 $dot_color = 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]';
                                                 $label = 'Satisfactory';
@@ -395,7 +419,8 @@ try {
                                             ?>
                                             <div class="flex items-center justify-center gap-2">
                                                 <span class="w-2 h-2 rounded-full <?php echo $dot_color; ?>"></span>
-                                                <span class="text-[10px] font-bold uppercase tracking-tight text-slate-500" title="Score: <?php echo $rating; ?>"><?php echo $label; ?></span>
+                                                <span class="text-[10px] font-bold uppercase tracking-tight text-slate-500"
+                                                    title="Score: <?php echo $rating; ?>"><?php echo $label; ?></span>
                                             </div>
                                         </td>
                                         <td class="py-4 px-6">
@@ -403,18 +428,19 @@ try {
                                                 class="bg-slate-100 text-slate-600 px-2 py-1 rounded-md text-[10px] font-bold"><?php echo htmlspecialchars($sub['college']); ?></span>
                                         </td>
                                         <td class="py-4 px-6 text-slate-500 font-medium">
-                                            <?php echo htmlspecialchars($sub['role']); ?></td>
-                                        <td class="py-4 px-6 text-right">
-                                            <button
-                                                class="text-blue-600 hover:text-blue-800 font-bold text-xs uppercase tracking-wider transition-colors">Details</button>
+                                            <?php echo htmlspecialchars($sub['role']); ?>
+                                        </td>
+                                        <td class="py-4 px-6 text-right text-xs">
+                                            <a href="respondents.php?view_id=<?php echo $sub['submission_id']; ?>"
+                                                class="text-blue-600 hover:text-blue-800 font-bold uppercase tracking-wider transition-colors">Details</a>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
                             <?php else: ?>
-                                    <tr>
-                                        <td colspan="6" class="py-12 text-center text-slate-400 font-medium italic">No recent
-                                            evaluation records found.</td>
-                                    </tr>
+                                <tr>
+                                    <td colspan="6" class="py-12 text-center text-slate-400 font-medium italic">No recent
+                                        evaluation records found.</td>
+                                </tr>
                             <?php endif; ?>
                         </tbody>
                     </table>
@@ -500,22 +526,26 @@ try {
                         </thead>
                         <tbody class="text-sm divide-y divide-slate-50">
                             <?php foreach ($recentSubmissions as $sub): ?>
-                                    <tr class="hover:bg-slate-50/50 transition-colors">
-                                        <td class="py-4 px-6 text-slate-500 font-medium"><?php echo $sub['submission_date']; ?>
-                                        </td>
-                                        <td class="py-4 px-6 font-bold text-slate-800">
-                                            <?php echo htmlspecialchars($sub['respondent_name'] ?: 'Anonymous'); ?></td>
-                                        <td class="py-4 px-6 font-bold text-blue-600">
-                                            <?php echo htmlspecialchars($sub['college']); ?></td>
-                                        <td class="py-4 px-6 font-medium text-slate-500">
-                                            <?php echo htmlspecialchars($sub['role']); ?></td>
-                                        <td class="py-4 px-6 font-medium text-slate-500">
-                                            <?php echo htmlspecialchars($sub['department']); ?></td>
-                                        <td class="py-4 px-6 text-right">
-                                            <button
-                                                class="text-blue-600 hover:text-blue-800 font-bold text-xs uppercase tracking-wider transition-colors">View</button>
-                                        </td>
-                                    </tr>
+                                <tr class="hover:bg-slate-50/50 transition-colors">
+                                    <td class="py-4 px-6 text-slate-500 font-medium"><?php echo $sub['submission_date']; ?>
+                                    </td>
+                                    <td class="py-4 px-6 font-bold text-slate-800">
+                                        <?php echo htmlspecialchars($sub['respondent_name'] ?: 'Anonymous'); ?>
+                                    </td>
+                                    <td class="py-4 px-6 font-bold text-blue-600">
+                                        <?php echo htmlspecialchars($sub['college']); ?>
+                                    </td>
+                                    <td class="py-4 px-6 font-medium text-slate-500">
+                                        <?php echo htmlspecialchars($sub['role']); ?>
+                                    </td>
+                                    <td class="py-4 px-6 font-medium text-slate-500">
+                                        <?php echo htmlspecialchars($sub['department']); ?>
+                                    </td>
+                                    <td class="py-4 px-6 text-right">
+                                        <button
+                                            class="text-blue-600 hover:text-blue-800 font-bold text-xs uppercase tracking-wider transition-colors">View</button>
+                                    </td>
+                                </tr>
                             <?php endforeach; ?>
                         </tbody>
                     </table>
@@ -583,7 +613,7 @@ try {
             const chartView = document.getElementById('chartView');
             const chartYear = document.getElementById('chartYear');
             const chartMonth = document.getElementById('chartMonth');
-            
+
             const currentYear = new Date().getFullYear();
             for (let y = 2025; y <= currentYear; y++) {
                 const opt = document.createElement('option');
@@ -610,9 +640,9 @@ try {
                     .then(res => {
                         const emptyState = document.getElementById('chartEmptyState');
                         const canvas = document.getElementById('trendChart');
-                        
+
                         const allZeros = res.data.length === 0 || res.data.every(val => val == 0);
-                        
+
                         if (allZeros) {
                             emptyState.style.display = 'block';
                             canvas.style.display = 'none';
@@ -678,7 +708,7 @@ try {
                     })
                     .catch(err => console.error('Error fetching demographic data:', err));
             }
-            
+
             fetchDemographicData();
         });
 

@@ -13,57 +13,42 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
 
 require_once '../db_connect.php';
 
-// --- PLACEHOLDER DATA FOR UI DESIGN ---
-$allFeedback = [
-    [
-        'id' => 1,
-        'submission_date' => date('Y-m-d H:i:s', strtotime('-2 hours')),
-        'respondent_name' => 'Juan Dela Cruz',
-        'email' => 'jdelacruz@auf.edu.ph',
-        'role' => 'Student',
-        'college' => 'CCS',
-        'department' => 'Circulation Section',
-        'recommendations' => 'Please add more comfortable chairs in the reading area.',
-        'comments' => 'The library staff were very accommodating today. Thank you!',
-        'is_read' => false
-    ],
-    [
-        'id' => 2,
-        'submission_date' => date('Y-m-d H:i:s', strtotime('-1 days')),
-        'respondent_name' => 'Maria Clara',
-        'email' => 'mclara@auf.edu.ph',
-        'role' => 'Faculty',
-        'college' => 'CAS',
-        'department' => 'General Reference Section',
-        'recommendations' => '',
-        'comments' => 'Great collection of newly acquired books. However, it can get noisy near the entrance.',
-        'is_read' => false
-    ],
-    [
-        'id' => 3,
-        'submission_date' => date('Y-m-d H:i:s', strtotime('-2 days')),
-        'respondent_name' => 'Jose Rizal',
-        'email' => 'jrizal@auf.edu.ph',
-        'role' => 'Alumni',
-        'college' => 'CBA',
-        'department' => 'Filipiniana Section',
-        'recommendations' => 'Extend library hours during weekends.',
-        'comments' => '',
-        'is_read' => true
-    ],
-    [
-        'id' => 4,
-        'submission_date' => date('Y-m-d H:i:s', strtotime('-3 days')),
-        'respondent_name' => 'Andres Bonifacio',
-        'email' => 'abonifacio@auf.edu.ph',
-        'role' => 'Student',
-        'college' => 'CAMP',
-        'department' => 'Health Sciences Library',
-        'recommendations' => 'Internet connection is quite slow in this section. Sometimes the AC is too cold.',
-        'comments' => 'I had trouble accessing some of the online journals using my institutional account.',
-        'is_read' => true
-    ]
-];
+// --- MARK AS READ HANDLER (AJAX) ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'mark_read') {
+    $sub_id = (int)$_POST['id'];
+    $stmt = $pdo->prepare("UPDATE survey_submission SET is_read = 1 WHERE submission_id = ?");
+    $stmt->execute([$sub_id]);
+    echo json_encode(['status' => 'success']);
+    exit;
+}
+
+// --- FETCH REAL FEEDBACK DATA ---
+try {
+    $stmt = $pdo->query("
+        SELECT 
+            ss.submission_id as id, 
+            ss.created_at as submission_date, 
+            ss.email as respondent_name, 
+            ss.email, 
+            pt.type_name as role, 
+            COALESCE(c.college_name, 'N/A') as college, 
+            ld.dept_name as department, 
+            ss.recommendations, 
+            ss.comments, 
+            ss.is_read
+        FROM survey_submission ss
+        JOIN patron_type pt ON ss.patron_type_id = pt.patron_type_id
+        LEFT JOIN college c ON ss.college_id = c.college_id
+        JOIN library_department ld ON ss.lib_dept_id = ld.lib_dept_id
+        WHERE (ss.comments IS NOT NULL AND ss.comments != '') 
+           OR (ss.recommendations IS NOT NULL AND ss.recommendations != '')
+           OR ss.overall_rating < 3.00
+        ORDER BY ss.created_at DESC
+    ");
+    $allFeedback = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $allFeedback = [];
+}
 // --------------------------------------
 
 $username = $_SESSION['username'] ?? 'Admin';
@@ -87,22 +72,30 @@ $role_display = $is_superadmin ? 'Super Administrator' : 'Branch Administrator';
         }
     </script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #e2e8f0; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
-<body class="bg-gray-50 flex h-screen overflow-hidden">
+<body class="bg-slate-200 flex h-screen overflow-hidden font-sans">
 
     <?php require_once 'sidebar.php'; ?>
 
     <div class="flex-1 ml-64 [.collapsed-sidebar_&]:ml-20 transition-all duration-300 flex flex-col h-screen">
 
-        <header class="bg-white shadow-sm border-b border-gray-200 h-16 flex items-center justify-between px-8 flex-shrink-0 z-10">
-            <div>
-                <h1 class="text-xl font-bold text-gray-800">Feedback Inbox</h1>
-                <p class="text-xs text-gray-500">Manage and review qualitative responses.</p>
+        <!-- Consolidated Glassmorphic Header -->
+        <header class="bg-white/60 backdrop-blur-lg shadow-sm border-b border-slate-200/60 h-20 flex items-center justify-between px-8 sticky top-0 z-30 flex-shrink-0">
+            <div class="flex flex-col">
+                <h1 class="text-xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                    </svg>
+                    Feedback Inbox
+                </h1>
+                <p class="text-sm text-slate-500 font-medium">Manage and review qualitative responses.</p>
             </div>
         </header>
 
@@ -144,14 +137,14 @@ $role_display = $is_superadmin ? 'Super Administrator' : 'Branch Administrator';
                                 <div class="flex justify-between items-center mb-1">
                                     <span class="font-bold <?php echo $isUnread ? 'text-gray-900' : 'text-gray-600'; ?> truncate pr-2 tracking-tight"><?php echo htmlspecialchars($fb['respondent_name']); ?></span>
                                     <div class="flex items-center flex-shrink-0">
-                                        <div class="active-indicator hidden flex items-center space-x-1.5 bg-blue-500 text-white text-[9px] font-bold px-2 py-0.5 rounded shadow-sm shadow-blue-500/30 uppercase tracking-widest">
+                                        <div class="active-indicator hidden flex items-center space-x-1.5 bg-blue-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm shadow-blue-500/30 uppercase tracking-widest">
                                             <span class="relative flex h-1.5 w-1.5">
                                                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-100 opacity-75"></span>
                                                 <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-white"></span>
                                             </span>
                                             <span>Viewing</span>
                                         </div>
-                                        <span class="date-display text-[11px] font-bold <?php echo $isUnread ? 'text-blue-600' : 'text-gray-400'; ?> uppercase tracking-wider"><?php echo date('M d', strtotime($fb['submission_date'])); ?></span>
+                                        <span class="date-display text-[11px] font-black <?php echo $isUnread ? 'text-blue-600' : 'text-slate-400'; ?> uppercase tracking-wider"><?php echo date('M d', strtotime($fb['submission_date'])); ?></span>
                                     </div>
                                 </div>
                                 <div class="text-[11px] font-bold text-gray-400 mb-2 truncate uppercase tracking-widest"><?php echo htmlspecialchars($fb['role'] . ' • ' . $fb['college']); ?></div>
@@ -347,17 +340,16 @@ $role_display = $is_superadmin ? 'Super Administrator' : 'Branch Administrator';
         filterSelect.addEventListener('change', applyFilters);
 
         // --- Persistence Logic ---
-        function getReadIds() {
-            const stored = localStorage.getItem('readFeedbackIds');
-            return stored ? JSON.parse(stored) : [];
-        }
-
         function saveReadId(id) {
-            const ids = getReadIds();
-            if(!ids.includes(id)) {
-                ids.push(id);
-                localStorage.setItem('readFeedbackIds', JSON.stringify(ids));
-            }
+            // Server-side update
+            const formData = new FormData();
+            formData.append('action', 'mark_read');
+            formData.append('id', id);
+            
+            fetch('feedback.php', {
+                method: 'POST',
+                body: formData
+            }).catch(err => console.error('Error marking as read:', err));
         }
 
         function markItemAsReadVisually(btn) {
@@ -384,14 +376,14 @@ $role_display = $is_superadmin ? 'Super Administrator' : 'Branch Administrator';
         }
 
         function initializeReadStates() {
-            const readIds = getReadIds();
             feedbackItems.forEach(item => {
                 const data = JSON.parse(item.getAttribute('data-feedback'));
-                if(data.is_read || readIds.includes(data.id)) {
+                // Use the database-driven is_read property
+                if(data.is_read == 1 || data.is_read === true) {
                     markItemAsReadVisually(item);
                 }
             });
-            // Re-apply filters after initializing states in case the default filter isn't "All"
+            // Re-apply filters after initializing states
             applyFilters();
         }
 

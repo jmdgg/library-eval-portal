@@ -128,6 +128,7 @@ CREATE TABLE `survey_submission` (
   `overall_rating` decimal(3,2) NOT NULL, -- Changed to decimal to support averages (e.g., 4.50)
   `recommendations` text DEFAULT NULL,
   `comments` text DEFAULT NULL,
+  `is_read` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`submission_id`),
   KEY `idx_period` (`period_id`),
