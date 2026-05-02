@@ -691,17 +691,10 @@ if (empty($_SESSION['csrf_token'])) {
                             </div>
                         </div>
 
-                        <!-- Remember me + Forgot password -->
-                        <div class="utility-row">
-                            <label class="check-label">
-                                <input type="checkbox" name="remember" />
-                                Remember me
-                            </label>
-                            <a href="/admin/forgot-password.php" class="forgot-link">Forgot password?</a>
-                        </div>
-
                         <!-- Submit -->
-                        <button type="submit" class="btn-login">Login</button>
+                        <div class="mt-2">
+                            <button type="submit" class="btn-login">Login</button>
+                        </div>
 
                         <!-- ════════════════════════════════════════════════════════
                PLACEHOLDER: Google Login Button

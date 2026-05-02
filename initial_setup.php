@@ -10,9 +10,28 @@ require_once 'db_connect.php';
 echo "<h2>Initializing AUF Library System...</h2>";
 
 try {
-    $pdo->beginTransaction();
+    // 0. WIPE ALL TABLES (Hard Reset)
+    echo "⚠ Cleaning existing data...<br>";
+    $pdo->exec("SET FOREIGN_KEY_CHECKS = 0");
+    $tables = [
+        'response_detail',
+        'submission_service',
+        'survey_submission',
+        'question_metric',
+        'library_service',
+        'library_department',
+        'academic_department',
+        'college',
+        'patron_type',
+        'admin_user'
+    ];
+    foreach ($tables as $table) {
+        $pdo->exec("TRUNCATE TABLE $table");
+    }
+    $pdo->exec("SET FOREIGN_KEY_CHECKS = 1");
+    echo "✓ Workspace cleared.<br>";
 
-    // 1. Seed Patron Types
+    $pdo->beginTransaction();
     $roles = ['Student', 'Faculty', 'NTP', 'Alumni', 'Other Researcher', 'Other'];
     $stmt = $pdo->prepare("INSERT IGNORE INTO patron_type (type_name) VALUES (?)");
     foreach ($roles as $r) { $stmt->execute([$r]); }
