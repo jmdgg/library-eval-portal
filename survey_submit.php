@@ -15,23 +15,11 @@ try {
     // 1. ALL-OR-NOTHING TRANSACTION
     $pdo->beginTransaction();
 
-    // 2. Resolve Evaluation Period (Find or Create)
+    // 2. Evaluation Period Pivot: We no longer manage periods manually.
+    // We hardcode ID 1 for legacy DB compatibility and rely on created_at for filtering.
+    $period_id = 1;
     $submission_date = $_POST['date'] ?? date('Y-m-d');
     $timestamp = strtotime($submission_date);
-    $start_date = date('Y-m-01', $timestamp);
-    $end_date = date('Y-m-t', $timestamp);
-
-    $period_query = $pdo->prepare("SELECT period_id FROM evaluation_period WHERE start_date = ? AND end_date = ? LIMIT 1");
-    $period_query->execute([$start_date, $end_date]);
-    $period = $period_query->fetch();
-
-    if ($period) {
-        $period_id = $period['period_id'];
-    } else {
-        $insert_period = $pdo->prepare("INSERT INTO evaluation_period (start_date, end_date, is_processed) VALUES (?, ?, 0)");
-        $insert_period->execute([$start_date, $end_date]);
-        $period_id = $pdo->lastInsertId();
-    }
 
     // 3. Extract Demographics & Inputs
     $email = filter_var($_POST['email'] ?? '', FILTER_SANITIZE_EMAIL);

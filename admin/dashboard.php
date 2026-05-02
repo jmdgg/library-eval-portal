@@ -17,41 +17,67 @@ $username = $_SESSION['username'] ?? 'Admin';
 $is_superadmin = $_SESSION['is_superadmin'] ?? 0;
 $role_display = $is_superadmin ? 'Super Administrator' : 'Branch Administrator';
 
-// 3. Fetch Dashboard Analytics
+// --- DATE FILTER LOGIC ---
+$boundsStmt = $pdo->query("SELECT MIN(created_at) as earliest, MAX(created_at) as latest FROM survey_submission");
+$bounds = $boundsStmt->fetch();
+$dbEarliest = $bounds['earliest'] ? date('Y-m-d', strtotime($bounds['earliest'])) : date('Y-m-01');
+$dbLatest = $bounds['latest'] ? date('Y-m-d', strtotime($bounds['latest'])) : date('Y-m-d');
+
+function getSqlDate($monthName, $year, $isEnd = false) {
+    $monthNum = date('m', strtotime($monthName));
+    if ($isEnd) return date('Y-m-t 23:59:59', strtotime("$year-$monthNum-01"));
+    return "$year-$monthNum-01 00:00:00";
+}
+
+$startMonth = $_GET['start_month'] ?? date('F', strtotime($dbEarliest));
+$startYear = $_GET['start_year'] ?? date('Y', strtotime($dbEarliest));
+$endMonth = $_GET['end_month'] ?? date('F', strtotime($dbLatest));
+$endYear = $_GET['end_year'] ?? date('Y', strtotime($dbLatest));
+
+$startDate = getSqlDate($startMonth, $startYear);
+$endDate = getSqlDate($endMonth, $endYear, true);
+
+// 3. Fetch Dashboard Analytics (Filtered by Date)
 try {
     // Total Evaluations
-    $stmt = $pdo->query("SELECT COUNT(*) FROM survey_submission");
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM survey_submission WHERE created_at BETWEEN ? AND ?");
+    $stmt->execute([$startDate, $endDate]);
     $totalEvaluations = $stmt->fetchColumn() ?: 0;
 
     // Overall Satisfaction
-    $stmt = $pdo->query("SELECT AVG(score) FROM response_detail");
+    $stmt = $pdo->prepare("SELECT AVG(score) FROM response_detail rd JOIN survey_submission ss ON rd.submission_id = ss.submission_id WHERE ss.created_at BETWEEN ? AND ?");
+    $stmt->execute([$startDate, $endDate]);
     $avgScore = round($stmt->fetchColumn() ?: 0, 1);
 
     // Most Active College
-    $stmt = $pdo->query("
+    $stmt = $pdo->prepare("
         SELECT c.college_name 
         FROM survey_submission ss 
         JOIN college c ON ss.college_id = c.college_id 
+        WHERE ss.created_at BETWEEN ? AND ?
         GROUP BY c.college_id 
         ORDER BY COUNT(*) DESC LIMIT 1
     ");
+    $stmt->execute([$startDate, $endDate]);
     $mostActiveCollege = $stmt->fetchColumn() ?: 'N/A';
 
-    // Pending Flags/Reviews (unread + (overall_rating < 3.00 OR has feedback))
-    $stmt = $pdo->query("
+    // Pending Flags/Reviews
+    $stmt = $pdo->prepare("
         SELECT COUNT(*) 
         FROM survey_submission 
         WHERE is_read = 0 
+          AND created_at BETWEEN ? AND ?
           AND (
             (overall_rating IS NOT NULL AND CAST(overall_rating AS DECIMAL(10,2)) < 3.00) 
             OR (comments IS NOT NULL AND comments != '') 
             OR (recommendations IS NOT NULL AND recommendations != '')
           )
     ");
+    $stmt->execute([$startDate, $endDate]);
     $pendingFlags = $stmt->fetchColumn() ?: 0;
 
     // Recent Submissions
-    $stmt = $pdo->query("
+    $stmt = $pdo->prepare("
         SELECT 
             ss.submission_id, 
             ss.created_at as submission_date, 
@@ -64,8 +90,10 @@ try {
         JOIN patron_type pt ON ss.patron_type_id = pt.patron_type_id
         LEFT JOIN college c ON ss.college_id = c.college_id
         JOIN library_department ld ON ss.lib_dept_id = ld.lib_dept_id
+        WHERE ss.created_at BETWEEN ? AND ?
         ORDER BY ss.created_at DESC, ss.submission_id DESC LIMIT 50
     ");
+    $stmt->execute([$startDate, $endDate]);
     $recentSubmissions = $stmt->fetchAll();
 
     // Demographics
@@ -207,11 +235,43 @@ try {
                     </svg>
                     Dashboard Overview
                 </h1>
-                <p class="text-sm text-slate-500 font-medium">Welcome back, <?php echo htmlspecialchars($username); ?>
+                <p class="text-sm text-slate-500 font-medium tracking-tight">Welcome back, <?php echo htmlspecialchars($username); ?>
                     &mdash; <?php echo $role_display; ?></p>
             </div>
 
+            <!-- Redesigned 'Control Center' Date Filters -->
+            <div class="flex items-center gap-3">
+                <div class="flex items-center bg-slate-900/90 border border-slate-800 rounded-2xl p-1.5 shadow-xl backdrop-blur-md">
+                    <!-- Start Date Pill -->
+                    <div class="flex items-center gap-1 px-4 py-1.5 bg-slate-800/50 rounded-xl border border-slate-700/50 group hover:border-blue-500/50 transition-colors">
+                        <span class="text-[9px] font-black text-slate-500 uppercase tracking-tighter mr-1 group-hover:text-blue-400">From</span>
+                        <select id="header_start_month" class="text-sm font-extrabold text-slate-100 bg-transparent border-none focus:ring-0 cursor-pointer py-0 px-1">
+                            <?php $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                            foreach($months as $m) { $selected = (strtoupper($m) === strtoupper($startMonth)) ? 'selected' : ''; echo "<option value='".strtoupper($m)."' class='bg-slate-900 text-white' $selected>$m</option>"; } ?>
+                        </select>
+                        <input type="number" id="header_start_year" value="<?php echo $startYear; ?>" class="text-sm font-extrabold text-slate-100 bg-transparent border-none focus:ring-0 w-16 py-0 px-1">
+                    </div>
 
+                    <!-- Separator Icon -->
+                    <div class="px-2 text-blue-500/50">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
+                    </div>
+
+                    <!-- End Date Pill -->
+                    <div class="flex items-center gap-1 px-4 py-1.5 bg-slate-800/50 rounded-xl border border-slate-700/50 group hover:border-blue-500/50 transition-colors">
+                        <span class="text-[9px] font-black text-slate-500 uppercase tracking-tighter mr-1 group-hover:text-blue-400">To</span>
+                        <select id="header_end_month" class="text-sm font-extrabold text-slate-100 bg-transparent border-none focus:ring-0 cursor-pointer py-0 px-1">
+                            <?php foreach($months as $m) { $selected = (strtoupper($m) === strtoupper($endMonth)) ? 'selected' : ''; echo "<option value='".strtoupper($m)."' class='bg-slate-900 text-white' $selected>$m</option>"; } ?>
+                        </select>
+                        <input type="number" id="header_end_year" value="<?php echo $endYear; ?>" class="text-sm font-extrabold text-slate-100 bg-transparent border-none focus:ring-0 w-16 py-0 px-1">
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center gap-2">
+                    <button onclick="applyDateFilter()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition shadow-lg shadow-blue-900/20 hover:-translate-y-0.5 active:translate-y-0">Apply</button>
+                </div>
+            </div>
         </header>
 
         <main class="max-w-7xl mx-auto p-8 space-y-8 w-full flex-1">
@@ -764,6 +824,27 @@ try {
         window.onclick = (e) => {
             if (e.target === leadModal) leadModal.classList.add('hidden');
         };
+        function applyDateFilter() {
+            const sm = document.getElementById('header_start_month').value;
+            const sy = parseInt(document.getElementById('header_start_year').value);
+            const em = document.getElementById('header_end_month').value;
+            const ey = parseInt(document.getElementById('header_end_year').value);
+            const monthNames = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
+            const startDate = new Date(sy, monthNames.indexOf(sm), 1);
+            const endDate = new Date(ey, monthNames.indexOf(em), 1);
+            const now = new Date();
+            const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+            if (startDate > currentMonth || endDate > currentMonth) {
+                alert("Error: Future dates are not allowed. Please select current or past months.");
+                return;
+            }
+            if (startDate > endDate) {
+                alert("Error: 'From' date cannot be later than 'To' date.");
+                return;
+            }
+            window.location.href = `?start_month=${sm}&start_year=${sy}&end_month=${em}&end_year=${ey}`;
+        }
     </script>
 </body>
 
