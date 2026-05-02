@@ -53,15 +53,17 @@ try {
 
     // Most Active College
     $stmt = $pdo->prepare("
-        SELECT c.college_name 
+        SELECT c.college_name, COUNT(*) as eval_count
         FROM survey_submission ss 
         JOIN college c ON ss.college_id = c.college_id 
         WHERE ss.created_at BETWEEN ? AND ?
         GROUP BY c.college_id 
-        ORDER BY COUNT(*) DESC LIMIT 1
+        ORDER BY eval_count DESC LIMIT 1
     ");
     $stmt->execute([$startDate, $endDate]);
-    $mostActiveCollege = $stmt->fetchColumn() ?: 'N/A';
+    $collegeRow = $stmt->fetch();
+    $mostActiveCollege = $collegeRow['college_name'] ?? 'N/A';
+    $mostActiveCollegeCount = $collegeRow['eval_count'] ?? 0;
 
     // Pending Flags/Reviews
     $stmt = $pdo->prepare("
@@ -154,6 +156,17 @@ try {
         tailwind.config = {
             theme: {
                 extend: {
+                    borderRadius: {
+                        'none': '0',
+                        'sm': '0',
+                        'DEFAULT': '0',
+                        'md': '0',
+                        'lg': '0',
+                        'xl': '0',
+                        '2xl': '0',
+                        '3xl': '0',
+                        'full': '0',
+                    },
                     colors: {
                         slate: {
                             50: '#f8fafc',
@@ -169,7 +182,9 @@ try {
                         },
                         apricot: '#F7882F',
                         offwhite: '#FAFAFA',
-                        purewhite: '#FFFFFF'
+                        purewhite: '#FFFFFF',
+                        biblue: '#4A47A3',
+                        bigrey: '#E0E0E0'
                     }
                 }
             }
@@ -179,22 +194,29 @@ try {
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
+        * {
+            border-radius: 0 !important;
+        }
+
         body {
             background-color: #e2e8f0;
             color: #334155;
             font-family: 'Inter', sans-serif;
         }
 
+        .shadow-sm, .shadow, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl, .shadow-inner {
+            box-shadow: none !important;
+        }
+
         .btn-apricot {
             background-color: #F7882F;
             color: #FFFFFF;
-            transition: all 0.2s ease-in-out;
+            transition: all 0.1s ease-in-out;
+            border: 1px solid #e07725;
         }
 
         .btn-apricot:hover {
             background-color: #e07725;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(247, 136, 47, 0.2);
         }
 
         .custom-scrollbar::-webkit-scrollbar {
@@ -208,11 +230,50 @@ try {
 
         .custom-scrollbar::-webkit-scrollbar-thumb {
             background: #cbd5e1;
-            border-radius: 10px;
         }
 
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
+        }
+        
+        .kpi-card {
+            background: #FFFFFF;
+            border: 1px solid #E0E0E0;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 120px;
+            position: relative;
+        }
+
+        .kpi-title {
+            color: #4A47A3;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .kpi-value {
+            color: #000000;
+            font-size: 1.875rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .kpi-subtext {
+            color: #6B7280;
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+        }
+
+        .status-accent {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
         }
     </style>
 </head>
@@ -225,73 +286,73 @@ try {
     <div
         class="flex-1 ml-64 [.collapsed-sidebar_&]:ml-20 transition-all duration-300 min-h-screen flex flex-col relative z-0">
 
-        <!-- Consolidated Glassmorphic Header -->
+        <!-- Consolidated Flat Header -->
         <header
-            class="bg-white/60 backdrop-blur-lg shadow-sm border-b border-slate-200/60 h-20 flex items-center justify-between px-8 sticky top-0 z-30 flex-shrink-0">
+            class="bg-white border-b border-slate-300 h-20 flex items-center justify-between px-8 sticky top-0 z-30 flex-shrink-0">
             <div class="flex flex-col">
-                <h1 class="text-xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
-                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z">
-                        </path>
-                    </svg>
+                <h1 class="text-lg font-bold text-slate-800 tracking-tight flex items-center gap-2">
+                    <div class="p-1 bg-slate-100 border border-slate-300 rounded-none">
+                        <svg class="w-4 h-4 text-[#4A47A3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z">
+                            </path>
+                        </svg>
+                    </div>
                     Dashboard Overview
                 </h1>
-                <p class="text-sm text-slate-500 font-medium tracking-tight">Welcome back,
-                    <?php echo htmlspecialchars($username); ?>
-                </p>
+                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-tight">System Terminal / Operational Intelligence</p>
             </div>
 
-            <!-- Redesigned 'Control Center' Date Filters -->
+            <!-- 'Control Center' Date Filters -->
             <div class="flex items-center gap-3">
                 <div
-                    class="flex items-center bg-slate-900/90 border border-slate-800 rounded-2xl p-1.5 shadow-xl backdrop-blur-md">
+                    class="flex items-center bg-white border border-slate-300 p-1">
                     <!-- Start Date Pill -->
                     <div
-                        class="flex items-center gap-1 px-4 py-1.5 bg-slate-800/50 rounded-xl border border-slate-700/50 group hover:border-blue-500/50 transition-colors">
+                        class="flex items-center gap-1 px-3 py-1 bg-slate-50 border border-slate-200 group">
                         <span
-                            class="text-[9px] font-black text-slate-500 uppercase tracking-tighter mr-1 group-hover:text-blue-400">From</span>
+                            class="text-[9px] font-black text-slate-500 uppercase tracking-tighter mr-1">From</span>
                         <select id="header_start_month"
-                            class="text-sm font-extrabold text-slate-100 bg-transparent border-none focus:ring-0 cursor-pointer py-0 px-1">
+                            class="text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 cursor-pointer py-0 px-1">
                             <?php $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
                             foreach ($months as $m) {
                                 $selected = (strtoupper($m) === strtoupper($startMonth)) ? 'selected' : '';
-                                echo "<option value='" . strtoupper($m) . "' class='bg-slate-900 text-white' $selected>$m</option>";
+                                echo "<option value='" . strtoupper($m) . "' class='bg-white text-slate-800' $selected>$m</option>";
                             } ?>
                         </select>
                         <input type="number" id="header_start_year" value="<?php echo $startYear; ?>"
-                            class="text-sm font-extrabold text-slate-100 bg-transparent border-none focus:ring-0 w-16 py-0 px-1">
+                            class="text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 w-16 py-0 px-1">
                     </div>
 
                     <!-- Separator Icon -->
-                    <div class="px-2 text-blue-500/50">
+                    <div class="px-2 text-slate-400">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
                         </svg>
                     </div>
 
                     <!-- End Date Pill -->
                     <div
-                        class="flex items-center gap-1 px-4 py-1.5 bg-slate-800/50 rounded-xl border border-slate-700/50 group hover:border-blue-500/50 transition-colors">
+                        class="flex items-center gap-1 px-3 py-1 bg-slate-50 border border-slate-200 group">
                         <span
-                            class="text-[9px] font-black text-slate-500 uppercase tracking-tighter mr-1 group-hover:text-blue-400">To</span>
+                            class="text-[9px] font-black text-slate-500 uppercase tracking-tighter mr-1">To</span>
                         <select id="header_end_month"
-                            class="text-sm font-extrabold text-slate-100 bg-transparent border-none focus:ring-0 cursor-pointer py-0 px-1">
+                            class="text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 cursor-pointer py-0 px-1">
                             <?php foreach ($months as $m) {
                                 $selected = (strtoupper($m) === strtoupper($endMonth)) ? 'selected' : '';
-                                echo "<option value='" . strtoupper($m) . "' class='bg-slate-900 text-white' $selected>$m</option>";
+                                echo "<option value='" . strtoupper($m) . "' class='bg-white text-slate-800' $selected>$m</option>";
                             } ?>
                         </select>
                         <input type="number" id="header_end_year" value="<?php echo $endYear; ?>"
-                            class="text-sm font-extrabold text-slate-100 bg-transparent border-none focus:ring-0 w-16 py-0 px-1">
+                            class="text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 w-16 py-0 px-1">
                     </div>
                 </div>
 
                 <!-- Action Buttons -->
                 <div class="flex items-center gap-2">
                     <button onclick="applyDateFilter()"
-                        class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition shadow-lg shadow-indigo-400 hover:-translate-y-0.5 active:translate-y-0">Apply</button>
+                        class="bg-[#4A47A3] hover:bg-[#3b3882] text-white px-5 py-2 text-[10px] font-bold uppercase tracking-widest border border-[#3b3882]">Apply</button>
                 </div>
             </div>
         </header>
@@ -299,107 +360,61 @@ try {
         <main class="max-w-7xl mx-auto p-8 space-y-8 w-full flex-1">
 
             <!-- 1. KPI 'Glance Cards' Row -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <!-- Total Evaluations -->
-                <div
-                    class="bg-white rounded-2xl p-6 shadow-[0_2px_10px_rgb(0,0,0,0.02)] border border-slate-100 flex items-center gap-5 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-shadow">
-                    <div
-                        class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                            </path>
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Total Evaluations
-                        </p>
-                        <p class="text-2xl font-extrabold text-slate-800">
-                            <?php echo htmlspecialchars($totalEvaluations); ?>
-                        </p>
-                    </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Total Evaluations</div>
+                    <div class="kpi-value"><?php echo htmlspecialchars($totalEvaluations); ?></div>
+                    <div class="kpi-subtext">Cumulative submissions</div>
+                    <div class="status-accent bg-blue-500"></div>
                 </div>
 
                 <!-- Overall Satisfaction -->
-                <div
-                    class="bg-white rounded-2xl p-6 shadow-[0_2px_10px_rgb(0,0,0,0.02)] border border-slate-100 flex items-center gap-5 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-shadow">
-                    <div
-                        class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
-                            </path>
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Overall Satisfaction
-                        </p>
-                        <p class="text-2xl font-extrabold text-slate-800">
-                            <?php echo number_format((float) $avgScore, 1); ?> <span
-                                class="text-sm font-medium text-slate-400">/ 5.0</span>
-                        </p>
-                    </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Overall Satisfaction</div>
+                    <div class="kpi-value"><?php echo number_format((float) $avgScore, 1); ?> <span class="text-sm font-normal text-slate-400">/ 5.0</span></div>
+                    <div class="kpi-subtext">Average metric score</div>
+                    <div class="status-accent bg-emerald-500"></div>
                 </div>
 
                 <!-- Most Active College -->
-                <div id="kpiMostActive"
-                    class="bg-gradient-to-br from-amber-400 to-amber-500 rounded-2xl p-6 shadow-[0_2px_10px_rgba(245,158,11,0.2)] border border-amber-400 flex items-center gap-5 hover:shadow-[0_8px_30px_rgba(245,158,11,0.4)] transition-all cursor-pointer hover:-translate-y-1">
-                    <div
-                        class="w-12 h-12 rounded-xl bg-white/20 text-white flex items-center justify-center flex-shrink-0">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4">
-                            </path>
-                        </svg>
+                <div id="kpiMostActive" class="kpi-card cursor-pointer hover:bg-slate-50 transition-colors">
+                    <div class="kpi-title">Most Active College</div>
+                    <div class="text-base font-bold text-black mt-1 line-clamp-1" title="<?php echo htmlspecialchars($mostActiveCollege); ?>">
+                        <?php echo htmlspecialchars($mostActiveCollege); ?>
                     </div>
-                    <div>
-                        <p class="text-xs font-bold text-amber-50 uppercase tracking-wider mb-0.5">Most Active College
-                        </p>
-                        <p class="text-base font-extrabold text-white leading-tight line-clamp-2"
-                            title="<?php echo htmlspecialchars($mostActiveCollege); ?>">
-                            <?php echo htmlspecialchars($mostActiveCollege); ?>
-                        </p>
-                    </div>
+                    <div class="kpi-subtext"><?php echo $mostActiveCollegeCount; ?> Evaluations</div>
+                    <div class="status-accent bg-amber-500"></div>
                 </div>
 
                 <!-- Pending Flags/Reviews -->
-                <div onclick="window.location.href='feedback.php';"
-                    class="bg-gradient-to-br from-rose-400 to-rose-500 rounded-2xl p-6 shadow-[0_2px_10px_rgba(244,63,94,0.2)] border border-rose-400 flex items-center gap-5 hover:shadow-[0_8px_30px_rgba(244,63,94,0.4)] transition-all cursor-pointer hover:-translate-y-1">
-                    <div
-                        class="w-12 h-12 rounded-xl bg-white/20 text-white flex items-center justify-center flex-shrink-0">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
-                            </path>
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="text-xs font-bold text-rose-50 uppercase tracking-wider mb-0.5">Pending Flags</p>
-                        <p class="text-2xl font-extrabold text-white"><?php echo htmlspecialchars($pendingFlags); ?>
-                        </p>
-                    </div>
+                <div class="kpi-card cursor-pointer hover:bg-slate-50 transition-colors" onclick="window.location.href='feedback.php';">
+                    <div class="kpi-title">Pending Flags</div>
+                    <div class="kpi-value"><?php echo htmlspecialchars($pendingFlags); ?></div>
+                    <div class="kpi-subtext">Requires attention <span class="<?php echo $pendingFlags > 0 ? 'text-rose-600' : 'text-emerald-600'; ?> font-bold"><?php echo $pendingFlags > 0 ? 'Action Needed' : 'Clear'; ?></span></div>
+                    <div class="status-accent bg-rose-500"></div>
                 </div>
             </div>
 
             <!-- 2. The Main Analytics Grid -->
-            <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
                 <!-- Left Column (Performance Trend) -->
                 <div
-                    class="bg-white p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 border-t-4 border-t-blue-500 relative overflow-hidden group lg:col-span-3 flex flex-col">
-                    <div class="flex items-center justify-between mb-6">
-                        <h3 class="text-lg font-extrabold text-slate-800 tracking-tight">Submission Volume</h3>
+                    class="bg-white p-4 border border-slate-300 lg:col-span-3 flex flex-col">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xs font-bold text-[#4A47A3] uppercase tracking-wider">Submission Volume</h3>
                         <div class="flex gap-2">
                             <select id="chartView"
-                                class="bg-white border border-slate-200 rounded-lg px-2 py-1 text-[10px] font-bold text-slate-700 shadow-sm outline-none focus:border-blue-500 transition-colors uppercase tracking-wider">
+                                class="bg-white border border-slate-300 px-2 py-1 text-[10px] font-bold text-slate-700 outline-none focus:border-blue-500 uppercase tracking-wider">
                                 <option value="yearly">Yearly Trend</option>
                                 <option value="monthly">Monthly Trend</option>
                             </select>
                             <select id="chartYear"
-                                class="bg-white border border-slate-200 rounded-lg px-2 py-1 text-[10px] font-bold text-slate-700 shadow-sm outline-none focus:border-blue-500 transition-colors uppercase tracking-wider">
+                                class="bg-white border border-slate-300 px-2 py-1 text-[10px] font-bold text-slate-700 outline-none focus:border-blue-500 uppercase tracking-wider">
                                 <!-- JS Populated -->
                             </select>
                             <select id="chartMonth"
-                                class="bg-white border border-slate-200 rounded-lg px-2 py-1 text-[10px] font-bold text-slate-700 shadow-sm outline-none focus:border-blue-500 transition-colors uppercase tracking-wider hidden">
+                                class="bg-white border border-slate-300 px-2 py-1 text-[10px] font-bold text-slate-700 outline-none focus:border-blue-500 uppercase tracking-wider hidden">
                                 <option value="1">Jan</option>
                                 <option value="2">Feb</option>
                                 <option value="3">Mar</option>
@@ -415,10 +430,10 @@ try {
                             </select>
                         </div>
                     </div>
-                    <div class="w-full h-80 relative flex-1">
+                    <div class="w-full h-64 relative flex-1">
                         <div id="chartEmptyState"
                             style="display:none; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); text-align:center; width: 100%;">
-                            <h4 class="text-slate-400 font-bold text-sm">No evaluations as of yet</h4>
+                            <h4 class="text-slate-400 font-bold text-xs">No evaluations as of yet</h4>
                         </div>
                         <canvas id="trendChart"></canvas>
                     </div>
@@ -426,14 +441,14 @@ try {
 
                 <!-- Right Column (Demographics) -->
                 <div
-                    class="bg-white p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 border-t-4 border-t-indigo-500 relative overflow-hidden group lg:col-span-2 flex flex-col">
-                    <div class="flex items-center justify-between mb-6">
-                        <h3 class="text-lg font-extrabold text-slate-800 tracking-tight">Demographics</h3>
+                    class="bg-white p-4 border border-slate-300 lg:col-span-2 flex flex-col">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xs font-bold text-[#4A47A3] uppercase tracking-wider">Demographics</h3>
                         <div
-                            class="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider">
+                            class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">
                             User Distribution</div>
                     </div>
-                    <div class="w-full h-80 relative flex-1">
+                    <div class="w-full h-64 relative flex-1">
                         <canvas id="demoChart"></canvas>
                     </div>
                 </div>
@@ -441,33 +456,32 @@ try {
 
             <!-- 3. Recent Activity Table -->
             <div
-                class="bg-white p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 border-t-4 border-t-emerald-500 relative overflow-hidden group flex flex-col">
-                <div class="flex justify-between items-center mb-6">
+                class="bg-white p-4 border border-slate-300 flex flex-col">
+                <div class="flex justify-between items-center mb-4">
                     <div>
-                        <h3 class="text-lg font-extrabold text-slate-800 tracking-tight">Recent Submissions</h3>
-                        <p class="text-xs text-slate-500 mt-0.5">High-level view of latest library evaluations.</p>
+                        <h3 class="text-xs font-bold text-[#4A47A3] uppercase tracking-wider">Recent Submissions</h3>
                     </div>
-                    <a href="respondents.php" class="btn-apricot px-4 py-2 rounded-lg text-xs font-bold shadow-sm">Go To
+                    <a href="respondents.php" class="btn-apricot px-3 py-1.5 text-xs font-bold">Go To
                         Respondents</a>
                 </div>
 
-                <div class="overflow-x-auto custom-scrollbar border border-slate-100 rounded-xl">
+                <div class="overflow-x-auto border border-slate-200">
                     <table class="w-full text-left border-collapse min-w-[800px]">
                         <thead class="bg-slate-50 border-b border-slate-200">
                             <tr>
-                                <th class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">Date
+                                <th class="py-2 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-r border-slate-200">Date
                                 </th>
-                                <th class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                <th class="py-2 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-r border-slate-200">
                                     Respondent</th>
                                 <th
-                                    class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">
+                                    class="py-2 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center border-r border-slate-200">
                                     Satisfied?</th>
-                                <th class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">College
+                                <th class="py-2 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-r border-slate-200">College
                                 </th>
-                                <th class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">User
+                                <th class="py-2 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-r border-slate-200">User
                                     Type</th>
                                 <th
-                                    class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">
+                                    class="py-2 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">
                                     Action</th>
                             </tr>
                         </thead>
@@ -668,15 +682,15 @@ try {
                     datasets: [{
                         label: 'Evaluations',
                         data: [],
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.05)',
-                        borderWidth: 3,
+                        borderColor: '#4A47A3',
+                        backgroundColor: 'rgba(74, 71, 163, 0.05)',
+                        borderWidth: 2,
                         pointBackgroundColor: '#ffffff',
-                        pointBorderColor: '#3b82f6',
-                        pointBorderWidth: 2,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        tension: 0.4,
+                        pointBorderColor: '#4A47A3',
+                        pointBorderWidth: 1,
+                        pointRadius: 3,
+                        pointHoverRadius: 5,
+                        tension: 0,
                         fill: true
                     }]
                 },
@@ -685,8 +699,8 @@ try {
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
                     scales: {
-                        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
-                        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                        y: { beginAtZero: true, grid: { color: '#E0E0E0' }, ticks: { font: { size: 9 } } },
+                        x: { grid: { display: false }, ticks: { font: { size: 9 } } }
                     }
                 }
             });
@@ -754,19 +768,26 @@ try {
                     labels: [],
                     datasets: [{
                         data: [],
-                        backgroundColor: ['#6366f1', '#f59e0b', '#10b981', '#ec4899', '#8b5cf6', '#64748b'],
-                        borderWidth: 2,
-                        borderColor: '#ffffff',
-                        hoverOffset: 10
+                        backgroundColor: [
+                            'rgba(74, 71, 163, 0.7)',  // Faded Blue
+                            'rgba(255, 131, 115, 0.7)', // Salmon
+                            'rgba(155, 155, 155, 0.7)', // Grey
+                            'rgba(74, 144, 226, 0.7)',  // Light Blue
+                            'rgba(247, 136, 47, 0.7)',   // Apricot/Salmon
+                            'rgba(100, 116, 139, 0.7)'  // Slate
+                        ],
+                        borderWidth: 1,
+                        borderColor: '#E0E0E0',
+                        hoverOffset: 0
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { position: 'bottom', labels: { boxWidth: 10, padding: 15, font: { size: 11, weight: 'bold' } } }
+                        legend: { position: 'right', labels: { boxWidth: 8, padding: 10, font: { size: 10 } } }
                     },
-                    cutout: '75%',
+                    cutout: '60%',
                     onClick: (event, elements, chart) => {
                         if (elements[0]) {
                             const index = elements[0].index;
