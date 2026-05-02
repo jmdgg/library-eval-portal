@@ -23,9 +23,11 @@ $bounds = $boundsStmt->fetch();
 $dbEarliest = $bounds['earliest'] ? date('Y-m-d', strtotime($bounds['earliest'])) : date('Y-m-01');
 $dbLatest = $bounds['latest'] ? date('Y-m-d', strtotime($bounds['latest'])) : date('Y-m-d');
 
-function getSqlDate($monthName, $year, $isEnd = false) {
+function getSqlDate($monthName, $year, $isEnd = false)
+{
     $monthNum = date('m', strtotime($monthName));
-    if ($isEnd) return date('Y-m-t 23:59:59', strtotime("$year-$monthNum-01"));
+    if ($isEnd)
+        return date('Y-m-t 23:59:59', strtotime("$year-$monthNum-01"));
     return "$year-$monthNum-01 00:00:00";
 }
 
@@ -235,41 +237,61 @@ try {
                     </svg>
                     Dashboard Overview
                 </h1>
-                <p class="text-sm text-slate-500 font-medium tracking-tight">Welcome back, <?php echo htmlspecialchars($username); ?>
-                    &mdash; <?php echo $role_display; ?></p>
+                <p class="text-sm text-slate-500 font-medium tracking-tight">Welcome back,
+                    <?php echo htmlspecialchars($username); ?>
+                </p>
             </div>
 
             <!-- Redesigned 'Control Center' Date Filters -->
             <div class="flex items-center gap-3">
-                <div class="flex items-center bg-slate-900/90 border border-slate-800 rounded-2xl p-1.5 shadow-xl backdrop-blur-md">
+                <div
+                    class="flex items-center bg-slate-900/90 border border-slate-800 rounded-2xl p-1.5 shadow-xl backdrop-blur-md">
                     <!-- Start Date Pill -->
-                    <div class="flex items-center gap-1 px-4 py-1.5 bg-slate-800/50 rounded-xl border border-slate-700/50 group hover:border-blue-500/50 transition-colors">
-                        <span class="text-[9px] font-black text-slate-500 uppercase tracking-tighter mr-1 group-hover:text-blue-400">From</span>
-                        <select id="header_start_month" class="text-sm font-extrabold text-slate-100 bg-transparent border-none focus:ring-0 cursor-pointer py-0 px-1">
+                    <div
+                        class="flex items-center gap-1 px-4 py-1.5 bg-slate-800/50 rounded-xl border border-slate-700/50 group hover:border-blue-500/50 transition-colors">
+                        <span
+                            class="text-[9px] font-black text-slate-500 uppercase tracking-tighter mr-1 group-hover:text-blue-400">From</span>
+                        <select id="header_start_month"
+                            class="text-sm font-extrabold text-slate-100 bg-transparent border-none focus:ring-0 cursor-pointer py-0 px-1">
                             <?php $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-                            foreach($months as $m) { $selected = (strtoupper($m) === strtoupper($startMonth)) ? 'selected' : ''; echo "<option value='".strtoupper($m)."' class='bg-slate-900 text-white' $selected>$m</option>"; } ?>
+                            foreach ($months as $m) {
+                                $selected = (strtoupper($m) === strtoupper($startMonth)) ? 'selected' : '';
+                                echo "<option value='" . strtoupper($m) . "' class='bg-slate-900 text-white' $selected>$m</option>";
+                            } ?>
                         </select>
-                        <input type="number" id="header_start_year" value="<?php echo $startYear; ?>" class="text-sm font-extrabold text-slate-100 bg-transparent border-none focus:ring-0 w-16 py-0 px-1">
+                        <input type="number" id="header_start_year" value="<?php echo $startYear; ?>"
+                            class="text-sm font-extrabold text-slate-100 bg-transparent border-none focus:ring-0 w-16 py-0 px-1">
                     </div>
 
                     <!-- Separator Icon -->
                     <div class="px-2 text-blue-500/50">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                                d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                        </svg>
                     </div>
 
                     <!-- End Date Pill -->
-                    <div class="flex items-center gap-1 px-4 py-1.5 bg-slate-800/50 rounded-xl border border-slate-700/50 group hover:border-blue-500/50 transition-colors">
-                        <span class="text-[9px] font-black text-slate-500 uppercase tracking-tighter mr-1 group-hover:text-blue-400">To</span>
-                        <select id="header_end_month" class="text-sm font-extrabold text-slate-100 bg-transparent border-none focus:ring-0 cursor-pointer py-0 px-1">
-                            <?php foreach($months as $m) { $selected = (strtoupper($m) === strtoupper($endMonth)) ? 'selected' : ''; echo "<option value='".strtoupper($m)."' class='bg-slate-900 text-white' $selected>$m</option>"; } ?>
+                    <div
+                        class="flex items-center gap-1 px-4 py-1.5 bg-slate-800/50 rounded-xl border border-slate-700/50 group hover:border-blue-500/50 transition-colors">
+                        <span
+                            class="text-[9px] font-black text-slate-500 uppercase tracking-tighter mr-1 group-hover:text-blue-400">To</span>
+                        <select id="header_end_month"
+                            class="text-sm font-extrabold text-slate-100 bg-transparent border-none focus:ring-0 cursor-pointer py-0 px-1">
+                            <?php foreach ($months as $m) {
+                                $selected = (strtoupper($m) === strtoupper($endMonth)) ? 'selected' : '';
+                                echo "<option value='" . strtoupper($m) . "' class='bg-slate-900 text-white' $selected>$m</option>";
+                            } ?>
                         </select>
-                        <input type="number" id="header_end_year" value="<?php echo $endYear; ?>" class="text-sm font-extrabold text-slate-100 bg-transparent border-none focus:ring-0 w-16 py-0 px-1">
+                        <input type="number" id="header_end_year" value="<?php echo $endYear; ?>"
+                            class="text-sm font-extrabold text-slate-100 bg-transparent border-none focus:ring-0 w-16 py-0 px-1">
                     </div>
                 </div>
 
                 <!-- Action Buttons -->
                 <div class="flex items-center gap-2">
-                    <button onclick="applyDateFilter()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition shadow-lg shadow-blue-900/20 hover:-translate-y-0.5 active:translate-y-0">Apply</button>
+                    <button onclick="applyDateFilter()"
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition shadow-lg shadow-indigo-400 hover:-translate-y-0.5 active:translate-y-0">Apply</button>
                 </div>
             </div>
         </header>
