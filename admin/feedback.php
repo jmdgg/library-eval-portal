@@ -13,6 +13,15 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
 
 require_once '../db_connect.php';
 
+// --- DELETION HANDLER ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete_feedback') {
+    $sub_id = (int) $_POST['id'];
+    $stmt = $pdo->prepare("DELETE FROM survey_submission WHERE submission_id = ?");
+    $stmt->execute([$sub_id]);
+    header("Location: feedback.php?msg=deleted");
+    exit;
+}
+
 // --- MARK AS READ HANDLER (AJAX) ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'mark_read') {
     $sub_id = (int) $_POST['id'];
@@ -387,6 +396,20 @@ $role_display = $is_superadmin ? 'Super Administrator' : 'Branch Administrator';
                             </div>
                         </div>
 
+                        <!-- Actions -->
+                        <div class="flex justify-end pt-6">
+                            <form action="feedback.php" method="POST" id="deleteForm" onsubmit="return confirm('Are you sure you want to PERMANENTLY delete this feedback record? This action cannot be undone.');">
+                                <input type="hidden" name="action" value="delete_feedback">
+                                <input type="hidden" name="id" id="deleteId">
+                                <button type="submit" class="group flex items-center gap-2 bg-white border border-rose-200 hover:border-rose-500 text-rose-600 hover:bg-rose-50 px-5 py-2.5 transition-all">
+                                    <svg class="w-4 h-4 text-rose-400 group-hover:text-rose-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                    <span class="text-[10px] font-black uppercase tracking-widest">Delete Record</span>
+                                </button>
+                            </form>
+                        </div>
+
                     </div>
                 </div>
             </div>
@@ -431,6 +454,9 @@ $role_display = $is_superadmin ? 'Super Administrator' : 'Branch Administrator';
             // UI Switch
             document.getElementById('emptyState').classList.add('hidden');
             document.getElementById('contentState').classList.remove('hidden');
+
+            // Populate Delete ID
+            document.getElementById('deleteId').value = data.id;
 
             // Highlight active in list using foolproof inline styles
             document.querySelectorAll('.feedback-item').forEach(item => {
