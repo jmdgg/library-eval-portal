@@ -4,6 +4,7 @@
  * Extracts real-time DB records and injects them into master_template.xlsx
  */
 
+ob_start();
 session_start();
 require_once '../db_connect.php';
 require_once '../vendor/autoload.php';
@@ -13,37 +14,44 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 // 1. SECURITY
 if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
+    http_response_code(403);
     die('Unauthorized access.');
 }
 
+// Allow browser to read the filename from header
+header('Access-Control-Expose-Headers: Content-Disposition');
+
 // 2. FETCH DATE RANGE
-$start_month = $_GET['start_month'] ?? strtoupper(date('F'));
+$start_month = $_GET['start_month'] ?? date('F');
 $start_year = (int) ($_GET['start_year'] ?? date('Y'));
-$end_month = $_GET['end_month'] ?? strtoupper(date('F'));
+$end_month = $_GET['end_month'] ?? date('F');
 $end_year = (int) ($_GET['end_year'] ?? date('Y'));
 
 // 3. VALIDATE RANGE
 $startTS = strtotime("1 $start_month $start_year");
 $endTS = strtotime("1 $end_month $end_year");
 
+if (!$startTS || !$endTS) {
+    http_response_code(400);
+    die('Error: Invalid date parameters.');
+}
+
 if ($startTS > $endTS) {
+    http_response_code(400);
     die('Error: "From" date cannot be later than "To" date.');
 }
 
-if ($endTS > time()) {
-    die('Error: Future dates are not allowed.');
-}
-
-$reportDateLabel = "$start_month $start_year to $end_month $end_year";
-if ($startTS === $endTS) {
-    $reportDateLabel = "$start_month $start_year"; // Clean label if it's just one month
+$reportDateLabel = strtoupper(date('F Y', $startTS)) . " - " . strtoupper(date('F Y', $endTS));
+if (date('m-Y', $startTS) === date('m-Y', $endTS)) {
+    $reportDateLabel = strtoupper(date('F Y', $startTS));
 }
 
 try {
-    // 3. THE 3NF PIVOT QUERY (Flattens the DB back into a CSV-like structure)
+    // 3. THE 3NF PIVOT QUERY
+    // Filtering directly by submission date for accuracy
     $query = "
         SELECT 
-            d.department_name,
+            ld.dept_name as department_name,
             ss.is_satisfied,
             ss.overall_rating,
             ss.recommendations,
@@ -53,20 +61,16 @@ try {
             MAX(CASE WHEN rd.question_id = 3 THEN rd.score END) AS q3,
             MAX(CASE WHEN rd.question_id = 4 THEN rd.score END) AS q4
         FROM survey_submission ss
-        JOIN department d ON ss.department_id = d.department_id
-        JOIN evaluation_period ep ON ss.period_id = ep.period_id
+        JOIN library_department ld ON ss.lib_dept_id = ld.lib_dept_id
         LEFT JOIN response_detail rd ON ss.submission_id = rd.submission_id
-        WHERE 
-            STR_TO_DATE(CONCAT('1 ', ep.eval_month, ' ', ep.eval_year), '%d %M %Y') 
-            BETWEEN 
-            STR_TO_DATE(CONCAT('1 ', ?, ' ', ?), '%d %M %Y') 
-            AND 
-            LAST_DAY(STR_TO_DATE(CONCAT('1 ', ?, ' ', ?), '%d %M %Y'))
+        WHERE ss.created_at BETWEEN ? AND ?
         GROUP BY ss.submission_id
     ";
 
     $stmt = $pdo->prepare($query);
-    $stmt->execute([$start_month, $start_year, $end_month, $end_year]);
+    $start_date = date('Y-m-01 00:00:00', $startTS);
+    $end_date = date('Y-m-t 23:59:59', $endTS);
+    $stmt->execute([$start_date, $end_date]);
     $raw_submissions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // 4. INITIALIZE YOUR LEGACY BUCKETS
@@ -120,17 +124,18 @@ try {
         if ($row['q4'] && isset($scoreMap[$row['q4']]))
             $stats[$dept]['q4'][$scoreMap[$row['q4']]]++;
 
-        $sat = trim($row['is_satisfied']);
-        if (strcasecmp($sat, 'Yes') == 0)
+        $sat = (int)$row['is_satisfied'];
+        if ($sat === 1)
             $stats[$dept]['sat']['Yes']++;
-        elseif (strcasecmp($sat, 'No') == 0)
+        else
             $stats[$dept]['sat']['No']++;
 
-        $overall = trim($row['overall_rating']);
-        foreach ($stats[$dept]['overall'] as $key => $val) {
-            if (strcasecmp($overall, $key) == 0)
-                $stats[$dept]['overall'][$key]++;
-        }
+        $overall_map = [5 => 'Excellent', 4 => 'Very Good', 3 => 'Good', 2 => 'Fair', 1 => 'Needs Improvement', 0 => 'Needs Improvement'];
+        $rounded = (int)round((float)$row['overall_rating']);
+        if ($rounded > 5) $rounded = 5;
+        $mapped_overall = $overall_map[$rounded] ?? 'Fair';
+        
+        $stats[$dept]['overall'][$mapped_overall]++;
 
         if (!empty($row['recommendations'])) {
             $stats[$dept]['recoms'][] = $row['recommendations'];
@@ -347,15 +352,18 @@ try {
 
 
     // 8. STREAM THE FILE DIRECTLY TO THE BROWSER
-    $safeDate = str_replace(' ', '_', $reportDateLabel);
+    $safeDate = str_replace([' ', ','], '_', $reportDateLabel);
     $filename = "EVAL_REPORT_{$safeDate}.xlsx";
 
+    ob_clean();
     header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    header('Content-Disposition: attachment;filename="' . $filename . '"');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
     header('Cache-Control: max-age=0');
+    header('Access-Control-Expose-Headers: Content-Disposition');
 
     $writer = new Xlsx($spreadsheet);
     $writer->save('php://output');
+    ob_end_flush();
     exit;
 
 } catch (Exception $e) {

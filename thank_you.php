@@ -34,6 +34,10 @@
         </div>
     </div>
 
+    <script>
+        // Clear the draft cache on successful submission
+        localStorage.removeItem('library_survey_draft');
+    </script>
 </body>
 
 </html>

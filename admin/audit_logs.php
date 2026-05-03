@@ -13,13 +13,6 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
     exit;
 }
 
-// Optional: If you only want Super Admins to see this page, uncomment the block below:
-/*
-if ($_SESSION['is_superadmin'] != 1) {
-    die("Access Denied. Only Super Administrators can view audit logs.");
-}
-*/
-
 try {
     // 2. Fetch the last 100 logs, joining with the admin_user table to get the username
     $query = "
@@ -29,11 +22,9 @@ try {
             al.action_details,
             al.ip_address,
             al.created_at,
-            au.username,
-            d.department_name
+            au.username
         FROM audit_log al
         JOIN admin_user au ON al.admin_id = au.admin_id
-        LEFT JOIN department d ON au.department_id = d.department_id
         ORDER BY al.created_at DESC
         LIMIT 100
     ";
@@ -54,167 +45,125 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>System Audit Logs - AUF Library</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; }
+        
+        .bi-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 0;
+            box-shadow: none;
+        }
+
+        .bi-table-header {
+            color: #4A47A3;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f8fafc; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; }
+    </style>
 </head>
 
-<body class="bg-slate-50 flex">
-
+<body class="min-h-screen bg-slate-200 flex overflow-x-hidden">
     <?php require_once 'sidebar.php'; ?>
 
-    <div
-        class="flex-1 ml-64 [.collapsed-sidebar_&]:ml-20 transition-all duration-300 min-h-screen flex flex-col relative z-0 overflow-hidden bg-slate-50/80">
-
-        <div
-            class="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-indigo-900/5 to-transparent -z-10 pointer-events-none">
-        </div>
-        <div
-            class="absolute -top-24 -right-24 w-96 h-96 bg-indigo-400/10 rounded-full blur-3xl -z-10 pointer-events-none">
-        </div>
-        <div class="absolute top-48 -left-24 w-72 h-72 bg-blue-400/10 rounded-full blur-3xl -z-10 pointer-events-none">
-        </div>
-
-        <header
-            class="bg-white/60 backdrop-blur-lg shadow-sm border-b border-slate-200/60 h-16 flex items-center px-8 sticky top-0 z-20 flex-shrink-0">
-            <h1 class="text-xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
-                <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                    </path>
-                </svg>
-                System Audit Logs
-            </h1>
+    <div class="flex-1 ml-64 [.collapsed-sidebar_&]:ml-20 transition-all duration-300 min-h-screen flex flex-col relative z-0">
+        
+        <!-- Consolidated Flat Header -->
+        <header class="bg-white border-b border-slate-300 h-20 flex items-center justify-between px-8 sticky top-0 z-30 flex-shrink-0">
+            <div class="flex flex-col">
+                <h1 class="text-lg font-bold text-slate-800 tracking-tight flex items-center gap-2">
+                    <div class="p-1 bg-slate-100 border border-slate-300 rounded-none">
+                        <svg class="w-4 h-4 text-[#4A47A3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                    System Audit Trail
+                </h1>
+                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Security / Access Governance</p>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-50 text-[#4A47A3] px-3 py-1.5 border border-blue-100 text-[9px] font-black uppercase tracking-widest">
+                    Immutable Ledger Active
+                </div>
+            </div>
         </header>
 
-        <main class="p-8 flex-1 overflow-hidden flex flex-col max-w-7xl mx-auto w-full">
-
-            <div
-                class="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 border-t-4 border-t-indigo-500 flex flex-col flex-1 overflow-hidden relative z-0">
-
-                <div
-                    class="p-6 border-b border-slate-100 flex justify-between items-center bg-white flex-shrink-0 relative z-10">
+        <main class="p-8 space-y-8 max-w-7xl mx-auto w-full flex-1 flex flex-col">
+            
+            <div class="bi-card flex flex-col flex-1 overflow-hidden">
+                <div class="p-6 border-b border-slate-200 bg-slate-50/50 flex justify-between items-center">
                     <div>
-                        <h2 class="text-xl font-extrabold text-slate-800 tracking-tight">Recent Security Events</h2>
-                        <p class="text-sm text-slate-500 mt-1">Immutable ledger of the last 100 system events across all
-                            administrative accounts.</p>
-                    </div>
-                    <div
-                        class="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-indigo-100 shadow-sm">
-                        Live Tracking Active
+                        <h2 class="text-xs font-black text-slate-800 uppercase tracking-widest">System Transactions</h2>
+                        <p class="text-[10px] text-slate-500 font-bold mt-1 uppercase">Historical record of administrative actions</p>
                     </div>
                 </div>
 
-                <div class="overflow-y-auto flex-1 p-0 custom-scrollbar">
+                <div class="overflow-y-auto flex-1 custom-scrollbar">
                     <table class="w-full text-left border-collapse">
-                        <thead class="bg-slate-50/80 sticky top-0 z-10 backdrop-blur-md shadow-sm">
+                        <thead class="bg-white sticky top-0 z-10 border-b-2 border-slate-200">
                             <tr>
-                                <th
-                                    class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
-                                    Timestamp</th>
-                                <th
-                                    class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
-                                    Administrator</th>
-                                <th
-                                    class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
-                                    Event Type</th>
-                                <th
-                                    class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
-                                    Details</th>
-                                <th
-                                    class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 text-right">
-                                    IP Address</th>
+                                <th class="py-4 px-6 bi-table-header">Timestamp</th>
+                                <th class="py-4 px-6 bi-table-header">Administrator</th>
+                                <th class="py-4 px-6 bi-table-header">Event</th>
+                                <th class="py-4 px-6 bi-table-header">Description</th>
+                                <th class="py-4 px-6 bi-table-header text-right">Source IP</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-100 bg-white">
-
+                        <tbody class="divide-y divide-slate-100">
                             <?php if (empty($logs)): ?>
                                 <tr>
-                                    <td colspan="5" class="py-12 text-center text-slate-400 font-medium">No system events
-                                        recorded yet.</td>
+                                    <td colspan="5" class="py-12 text-center text-slate-400 text-xs font-bold uppercase">No records found.</td>
                                 </tr>
                             <?php else: ?>
                                 <?php foreach ($logs as $log): ?>
-                                    <tr class="hover:bg-slate-50/50 transition-colors group">
-
-                                        <td class="py-4 px-6 text-sm text-slate-600 whitespace-nowrap font-medium">
-                                            <?php echo date('M d, Y', strtotime($log['created_at'])); ?> <br>
-                                            <span
-                                                class="text-xs text-slate-400 font-normal"><?php echo date('h:i A', strtotime($log['created_at'])); ?></span>
+                                    <tr class="hover:bg-slate-50 transition-colors">
+                                        <td class="py-4 px-6 text-[11px] font-bold text-slate-700 whitespace-nowrap">
+                                            <?php echo date('Y-m-d', strtotime($log['created_at'])); ?><br>
+                                            <span class="text-slate-400 font-medium"><?php echo date('H:i:s', strtotime($log['created_at'])); ?></span>
                                         </td>
-
                                         <td class="py-4 px-6">
-                                            <div class="flex items-center gap-3">
-                                                <div
-                                                    class="w-9 h-9 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 text-slate-600 flex items-center justify-center font-black text-sm border border-slate-200 shadow-sm group-hover:scale-105 transition-transform">
+                                            <div class="flex items-center gap-2">
+                                                <div class="w-6 h-6 bg-slate-100 border border-slate-300 text-slate-600 flex items-center justify-center font-black text-[9px]">
                                                     <?php echo strtoupper(substr($log['username'], 0, 1)); ?>
                                                 </div>
-                                                <div>
-                                                    <p class="text-sm font-bold text-slate-800">
-                                                        <?php echo htmlspecialchars($log['username']); ?></p>
-                                                    <p class="text-xs text-slate-500 font-medium">
-                                                        <?php echo $log['department_name'] ? htmlspecialchars($log['department_name']) : 'Super Administrator'; ?>
-                                                    </p>
-                                                </div>
+                                                <span class="text-xs font-bold text-slate-800"><?php echo htmlspecialchars($log['username']); ?></span>
                                             </div>
                                         </td>
-
                                         <td class="py-4 px-6">
                                             <?php
-                                            $badge_color = 'bg-slate-100 text-slate-700 border-slate-200';
-                                            if ($log['action_type'] == 'EXPORT_MASTER')
-                                                $badge_color = 'bg-emerald-50 text-emerald-700 border-emerald-200';
-                                            if ($log['action_type'] == 'LOGIN')
-                                                $badge_color = 'bg-blue-50 text-blue-700 border-blue-200';
-                                            if ($log['action_type'] == 'DELETE')
-                                                $badge_color = 'bg-red-50 text-red-700 border-red-200';
+                                            $badge_class = 'bg-slate-100 text-slate-600 border-slate-300';
+                                            if ($log['action_type'] == 'LOGIN') $badge_class = 'bg-blue-50 text-blue-700 border-blue-200';
+                                            if ($log['action_type'] == 'EXPORT') $badge_class = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                                            if ($log['action_type'] == 'DELETE') $badge_class = 'bg-rose-50 text-rose-700 border-rose-200';
                                             ?>
-                                            <span
-                                                class="px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider border shadow-sm <?php echo $badge_color; ?>">
+                                            <span class="px-2 py-0.5 border text-[9px] font-black uppercase tracking-tighter <?php echo $badge_class; ?>">
                                                 <?php echo htmlspecialchars($log['action_type']); ?>
                                             </span>
                                         </td>
-
-                                        <td class="py-4 px-6 text-sm text-slate-700 max-w-md truncate font-medium"
-                                            title="<?php echo htmlspecialchars($log['action_details']); ?>">
+                                        <td class="py-4 px-6 text-xs text-slate-600 font-medium max-w-xs truncate" title="<?php echo htmlspecialchars($log['action_details']); ?>">
                                             <?php echo htmlspecialchars($log['action_details']); ?>
                                         </td>
-
-                                        <td class="py-4 px-6 text-sm text-slate-400 font-mono text-right whitespace-nowrap">
+                                        <td class="py-4 px-6 text-[10px] font-mono text-slate-400 text-right">
                                             <?php echo htmlspecialchars($log['ip_address']); ?>
                                         </td>
-
                                     </tr>
                                 <?php endforeach; ?>
                             <?php endif; ?>
-
                         </tbody>
                     </table>
                 </div>
-
             </div>
 
         </main>
     </div>
-
-    <style>
-        /* Styling the table scrollbar */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f8fafc;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 10px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
-    </style>
-
 </body>
-
 </html>
