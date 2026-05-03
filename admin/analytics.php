@@ -164,6 +164,30 @@ $sentimentData = $sentimentStmt->fetchAll(PDO::FETCH_ASSOC);
             letter-spacing: 0.05em;
             margin-bottom: 0.5rem;
         }
+
+        .clickable-chart {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .clickable-chart:hover {
+            border-color: #4A47A3;
+            background-color: #f8fafc;
+        }
+
+        .expand-hint {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            color: #4A47A3;
+        }
+
+        .clickable-chart:hover .expand-hint {
+            opacity: 1;
+        }
     </style>
 </head>
 
@@ -318,7 +342,12 @@ $sentimentData = $sentimentStmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             </div>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div class="lg:col-span-2 bi-card">
+                <div class="lg:col-span-2 bi-card clickable-chart" onclick="openChartModal('service')">
+                    <div class="expand-hint">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                        </svg>
+                    </div>
                     <div class="flex items-center justify-between mb-4">
                         <div>
                             <h2 class="bi-title">Service Utilization Breakdown</h2>
@@ -329,17 +358,55 @@ $sentimentData = $sentimentStmt->fetchAll(PDO::FETCH_ASSOC);
                     </div>
                     <div class="h-[300px]"><canvas id="serviceChart"></canvas></div>
                 </div>
-                <div class="bi-card flex flex-col">
+                <div class="bi-card flex flex-col clickable-chart" onclick="openChartModal('metric')">
+                    <div class="expand-hint">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                        </svg>
+                    </div>
                     <h2 class="bi-title">Metric Performance Radar</h2>
                     <div class="flex-1 min-h-[300px] flex items-center justify-center"><canvas
                             id="metricChart"></canvas></div>
                 </div>
-                <div class="bi-card flex flex-col">
+                <div class="bi-card flex flex-col clickable-chart" onclick="openChartModal('dept')">
+                    <div class="expand-hint">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                        </svg>
+                    </div>
                     <h2 class="bi-title">Departmental Averages</h2>
                     <div class="flex-1 min-h-[300px]"><canvas id="deptChart"></canvas></div>
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- Chart Detail Modal -->
+    <div id="chartModal" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeChartModal()"></div>
+        <div class="bg-white border border-slate-300 w-full max-w-5xl transform scale-95 transition-transform duration-300 relative z-10 overflow-hidden mx-4 flex flex-col h-[85vh]">
+            <div class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shrink-0">
+                <div class="flex flex-col">
+                    <h2 id="modalChartTitle" class="text-[#4A47A3] font-bold text-sm uppercase tracking-wider">Chart Detail View</h2>
+                    <p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">High-Resolution Data Visualization</p>
+                </div>
+                <button onclick="closeChartModal()" class="text-slate-400 hover:text-slate-600 transition-colors p-2 hover:bg-slate-100">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-8 flex-1 flex items-center justify-center bg-slate-50 overflow-hidden relative">
+                <div class="w-full h-full flex items-center justify-center">
+                    <canvas id="modalChartCanvas"></canvas>
+                </div>
+            </div>
+            <div class="bg-white px-6 py-3 flex justify-between items-center border-t border-slate-200 shrink-0">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Tip: Use the scroll wheel to zoom if enabled</span>
+                <button onclick="closeChartModal()"
+                    class="bg-white border border-slate-300 text-gray-700 px-6 py-2 text-xs font-bold uppercase tracking-wider hover:bg-slate-50 transition-colors">Close View</button>
+            </div>
+        </div>
     </div>
     <script>
         function applyDateFilter() {
@@ -421,18 +488,158 @@ $sentimentData = $sentimentStmt->fetchAll(PDO::FETCH_ASSOC);
         const serviceData = <?php echo json_encode($serviceData); ?>;
         const metricData = <?php echo json_encode($metricData); ?>;
         const deptData = <?php echo json_encode($deptData); ?>;
+
+        let modalChartInstance = null;
+
+        // Base Chart Configs
+        const chartConfigs = {
+            service: {
+                type: 'bar',
+                data: {
+                    labels: serviceData.map(d => d.service_name),
+                    datasets: [{
+                        label: 'Uses',
+                        data: serviceData.map(d => d.usage_count),
+                        backgroundColor: 'rgba(74, 71, 163, 0.7)',
+                        borderColor: '#4A47A3',
+                        borderWidth: 1,
+                        barThickness: 20
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, beginAtZero: true, ticks: { font: { size: 9 } } },
+                        y: { grid: { display: false }, ticks: { font: { size: 9 } } }
+                    }
+                }
+            },
+            metric: {
+                type: 'radar',
+                data: {
+                    labels: metricData.map(d => d.question_text),
+                    datasets: [{
+                        label: 'Avg',
+                        data: metricData.map(d => d.avg_score),
+                        backgroundColor: 'rgba(74, 71, 163, 0.2)',
+                        borderColor: '#4A47A3',
+                        pointBackgroundColor: '#4A47A3',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#4A47A3'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            suggestedMin: 0,
+                            suggestedMax: 5,
+                            ticks: { stepSize: 1, font: { size: 8 } },
+                            pointLabels: { font: { size: 8 } }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            },
+            dept: {
+                type: 'bar',
+                data: {
+                    labels: deptData.map(d => d.dept_name),
+                    datasets: [{
+                        label: 'Avg',
+                        data: deptData.map(d => d.avg_rating),
+                        backgroundColor: deptData.map(d => d.avg_rating < 3 ? 'rgba(255, 131, 115, 0.7)' : (d.avg_rating < 4 ? 'rgba(155, 155, 155, 0.7)' : 'rgba(74, 71, 163, 0.7)')),
+                        borderColor: deptData.map(d => d.avg_rating < 3 ? '#ff8373' : (d.avg_rating < 4 ? '#9b9b9b' : '#4A47A3')),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, max: 5, ticks: { font: { size: 9 } } },
+                        x: { grid: { display: false }, ticks: { font: { size: 9 } } }
+                    }
+                }
+            }
+        };
+
+        // Initialize Mini Charts
         new Chart(document.getElementById('serviceChart'), {
-            type: 'bar', data: { labels: serviceData.map(d => d.service_name), datasets: [{ label: 'Uses', data: serviceData.map(d => d.usage_count), backgroundColor: 'rgba(74, 71, 163, 0.7)', borderColor: '#4A47A3', borderWidth: 1, barThickness: 20 }] },
-            options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, beginAtZero: true, ticks: { font: { size: 9 } } }, y: { grid: { display: false }, ticks: { font: { size: 9 } } } } }
+            ...chartConfigs.service,
+            data: {
+                ...chartConfigs.service.data,
+                labels: serviceData.map(d => d.service_name.length > 25 ? d.service_name.substring(0, 25) + '...' : d.service_name)
+            }
         });
+
         new Chart(document.getElementById('metricChart'), {
-            type: 'radar', data: { labels: metricData.map(d => d.question_text.substring(0, 20) + '...'), datasets: [{ label: 'Avg', data: metricData.map(d => d.avg_score), backgroundColor: 'rgba(74, 71, 163, 0.2)', borderColor: '#4A47A3', pointBackgroundColor: '#4A47A3', pointBorderColor: '#fff' }] },
-            options: { responsive: true, maintainAspectRatio: false, scales: { r: { suggestedMin: 0, suggestedMax: 5, ticks: { stepSize: 1, font: { size: 8 } }, pointLabels: { font: { size: 8 } } } }, plugins: { legend: { display: false } } }
+            ...chartConfigs.metric,
+            data: {
+                ...chartConfigs.metric.data,
+                labels: metricData.map(d => d.question_text.length > 20 ? d.question_text.substring(0, 20) + '...' : d.question_text)
+            }
         });
+
         new Chart(document.getElementById('deptChart'), {
-            type: 'bar', data: { labels: deptData.map(d => d.dept_name), datasets: [{ label: 'Avg', data: deptData.map(d => d.avg_rating), backgroundColor: deptData.map(d => d.avg_rating < 3 ? 'rgba(255, 131, 115, 0.7)' : (d.avg_rating < 4 ? 'rgba(155, 155, 155, 0.7)' : 'rgba(74, 71, 163, 0.7)')), borderColor: deptData.map(d => d.avg_rating < 3 ? '#ff8373' : (d.avg_rating < 4 ? '#9b9b9b' : '#4A47A3')), borderWidth: 1 }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 5, ticks: { font: { size: 9 } } }, x: { grid: { display: false }, ticks: { font: { size: 9 } } } } }
+            ...chartConfigs.dept,
+            data: {
+                ...chartConfigs.dept.data,
+                labels: deptData.map(d => d.dept_name.length > 15 ? d.dept_name.substring(0, 15) + '...' : d.dept_name)
+            }
         });
+
+        // Modal Functions
+        function openChartModal(type) {
+            const modal = document.getElementById('chartModal');
+            const title = document.getElementById('modalChartTitle');
+            const canvas = document.getElementById('modalChartCanvas');
+            
+            const titles = {
+                service: 'Service Utilization - Full Breakdown',
+                metric: 'Metric Performance - Radar Detail',
+                dept: 'Departmental Performance Averages'
+            };
+
+            title.textContent = titles[type];
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.querySelector('.transform').classList.replace('scale-95', 'scale-100');
+
+            // Destroy previous instance
+            if (modalChartInstance) modalChartInstance.destroy();
+
+            // Setup high-res options for modal
+            const modalConfig = JSON.parse(JSON.stringify(chartConfigs[type]));
+            
+            // Re-apply original labels (full text)
+            modalConfig.data.labels = chartConfigs[type].data.labels;
+            
+            // Adjust fonts for modal
+            if (modalConfig.options.scales.r) {
+                modalConfig.options.scales.r.pointLabels.font.size = 12;
+                modalConfig.options.scales.r.ticks.font.size = 10;
+            } else {
+                if (modalConfig.options.scales.x) modalConfig.options.scales.x.ticks.font.size = 11;
+                if (modalConfig.options.scales.y) modalConfig.options.scales.y.ticks.font.size = 11;
+            }
+            
+            modalChartInstance = new Chart(canvas, modalConfig);
+        }
+
+        function closeChartModal() {
+            const modal = document.getElementById('chartModal');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.querySelector('.transform').classList.replace('scale-100', 'scale-95');
+            if (modalChartInstance) {
+                setTimeout(() => modalChartInstance.destroy(), 300);
+            }
+        }
     </script>
 </body>
 

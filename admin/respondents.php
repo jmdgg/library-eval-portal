@@ -4,6 +4,7 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
     header("Location: login.php?error=unauthorized");
     exit;
 }
+
 require_once '../db_connect.php';
 
 // --- DELETION HANDLER ---
@@ -79,6 +80,7 @@ try {
         $scores = $sub['likert_scores'] ? explode(',', $sub['likert_scores']) : [];
         $sub['likert_scores'] = array_pad(array_slice(array_map('intval', $scores), 0, 4), 4, 0);
     }
+    unset($sub); // Break the reference to avoid doubling/overwriting bug
 } catch (Exception $e) {
     $allSubmissions = [];
 }
@@ -213,14 +215,14 @@ try {
                 <div class="flex items-center bg-white border border-slate-300 p-1">
                     <div class="flex items-center gap-1 px-3 py-1 bg-slate-50 border border-slate-200">
                         <span class="text-[9px] font-black text-slate-500 uppercase tracking-tighter mr-1">From</span>
-                        <select id="header_start_month" onchange="applyDateFilter()" class="text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 cursor-pointer py-0 px-1">
+                        <select id="header_start_month" class="text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 cursor-pointer py-0 px-1">
                             <?php $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
                             foreach ($months as $m) {
                                 $selected = (strtoupper($m) === strtoupper($startMonth)) ? 'selected' : '';
                                 echo "<option value='" . strtoupper($m) . "' class='bg-white text-slate-800' $selected>$m</option>";
                             } ?>
                         </select>
-                        <select id="header_start_year" onchange="applyDateFilter()" class="text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 cursor-pointer py-0 px-1">
+                        <select id="header_start_year" class="text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 cursor-pointer py-0 px-1">
                             <?php for ($y = date('Y', strtotime($dbEarliest)); $y <= date('Y'); $y++) {
                                 $selected = ($y == $startYear) ? 'selected' : '';
                                 echo "<option value='$y' class='bg-white text-slate-800' $selected>$y</option>";
@@ -229,13 +231,13 @@ try {
                     </div>
                     <div class="flex items-center gap-1 px-3 py-1 bg-slate-50 border border-slate-200 ml-1">
                         <span class="text-[9px] font-black text-slate-500 uppercase tracking-tighter mr-1">To</span>
-                        <select id="header_end_month" onchange="applyDateFilter()" class="text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 cursor-pointer py-0 px-1">
+                        <select id="header_end_month" class="text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 cursor-pointer py-0 px-1">
                             <?php foreach ($months as $m) {
                                 $selected = (strtoupper($m) === strtoupper($endMonth)) ? 'selected' : '';
                                 echo "<option value='" . strtoupper($m) . "' class='bg-white text-slate-800' $selected>$m</option>";
                             } ?>
                         </select>
-                        <select id="header_end_year" onchange="applyDateFilter()" class="text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 cursor-pointer py-0 px-1">
+                        <select id="header_end_year" class="text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 cursor-pointer py-0 px-1">
                             <?php for ($y = date('Y', strtotime($dbEarliest)); $y <= date('Y'); $y++) {
                                 $selected = ($y == $endYear) ? 'selected' : '';
                                 echo "<option value='$y' class='bg-white text-slate-800' $selected>$y</option>";

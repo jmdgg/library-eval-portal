@@ -580,20 +580,13 @@ if (empty($_SESSION['csrf_token'])) {
                 <!-- Headline -->
                 <h1 class="panel-title">Welcome Back!</h1>
                 <p class="panel-sub">
-                    Sign in to the <strong>AUF Library</strong><br />Evaluation Dashboard
+                    Sign in to the <strong>AUF Library<br />Evaluation and Analytics Portal</strong>
                 </p>
 
                 <!-- Trust badges -->
                 <div class="badge-row">
-                    <div class="badge-item">
-                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.955 11.955 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-                        </svg>
-                        SSL Secured
-                    </div>
                     <div class="badge-divider"></div>
-                    <div class="badge-item">
+                    <div class="badge-item" style="">
                         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round"
                                 d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
